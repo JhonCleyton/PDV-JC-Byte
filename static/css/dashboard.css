@@ -1,0 +1,404 @@
+/* Dashboard Cards */
+.card {
+    border: 0 !important;
+    box-shadow: 0 0 2rem 0 rgba(136, 152, 170, .15) !important;
+    transition: all 0.15s ease-in !important;
+    border-radius: 1rem !important;
+    position: relative !important;
+    overflow: hidden !important;
+    background: rgba(255, 255, 255, 0.9) !important;
+    backdrop-filter: blur(10px) !important;
+}
+
+.card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 0 2rem 0 rgba(136, 152, 170, .3);
+}
+
+.card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(45deg, rgba(255, 255, 255, 0.15), rgba(255, 255, 255, 0));
+    pointer-events: none;
+}
+
+/* Card Colors */
+.card.card-primary {
+    background: linear-gradient(135deg, #5e72e4 0%, #825ee4 100%) !important;
+    color: white !important;
+}
+
+.card.card-success {
+    background: linear-gradient(135deg, #2dce89 0%, #2dcecc 100%) !important;
+    color: white !important;
+}
+
+.card.card-info {
+    background: linear-gradient(135deg, #11cdef 0%, #1171ef 100%) !important;
+    color: white !important;
+}
+
+.card.card-warning {
+    background: linear-gradient(135deg, #fb6340 0%, #fbb140 100%) !important;
+    color: white !important;
+}
+
+.card.card-danger {
+    background: linear-gradient(135deg, #f5365c 0%, #f56036 100%) !important;
+    color: white !important;
+}
+
+.card.card-secondary {
+    background: linear-gradient(135deg, #627594 0%, #a8b8d8 100%) !important;
+    color: white !important;
+}
+
+/* Card Text Colors for Colored Cards */
+.card[class*="card-"] .text-muted,
+.card[class*="card-"] .numbers p {
+    color: rgba(255, 255, 255, 0.8) !important;
+}
+
+.card[class*="card-"] .numbers h5 {
+    color: white !important;
+}
+
+.card .card-body {
+    padding: 1.5rem;
+}
+
+.card .numbers {
+    text-align: left;
+}
+
+.card .numbers p {
+    margin-bottom: 0;
+    color: #8898aa;
+    font-size: 0.875rem;
+}
+
+.card .numbers h5 {
+    font-size: 1.5rem;
+    margin-bottom: 0;
+    color: #32325d;
+    font-weight: 600;
+}
+
+/* Icons */
+.icon {
+    width: 48px !important;
+    height: 48px !important;
+    background-position: center;
+    border-radius: 0.75rem !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    box-shadow: 0 0 2rem 0 rgba(136, 152, 170, .15) !important;
+}
+
+.icon i {
+    font-size: 1.25rem !important;
+    color: #fff !important;
+}
+
+/* Icon Colors */
+.icon.bg-gradient-primary {
+    background: linear-gradient(310deg, #5e72e4 0%, #825ee4 100%) !important;
+    box-shadow: 0 3px 6px rgba(94, 114, 228, 0.3);
+}
+
+.icon.bg-gradient-success {
+    background: linear-gradient(310deg, #2dce89 0%, #2dcecc 100%) !important;
+    box-shadow: 0 3px 6px rgba(45, 206, 137, 0.3);
+}
+
+.icon.bg-gradient-info {
+    background: linear-gradient(310deg, #11cdef 0%, #1171ef 100%) !important;
+    box-shadow: 0 3px 6px rgba(17, 205, 239, 0.3);
+}
+
+.icon.bg-gradient-warning {
+    background: linear-gradient(310deg, #fb6340 0%, #fbb140 100%) !important;
+    box-shadow: 0 3px 6px rgba(251, 99, 64, 0.3);
+}
+
+.icon.bg-gradient-danger {
+    background: linear-gradient(310deg, #f5365c 0%, #f56036 100%) !important;
+    box-shadow: 0 3px 6px rgba(245, 54, 92, 0.3);
+}
+
+.icon.bg-gradient-secondary {
+    background: linear-gradient(310deg, #627594 0%, #a8b8d8 100%) !important;
+    box-shadow: 0 3px 6px rgba(98, 117, 148, 0.3);
+}
+
+/* Tables */
+.table {
+    --bs-table-bg: transparent;
+    border-color: #e9ecef;
+}
+
+.table > :not(caption) > * > * {
+    padding: 1rem;
+    border-bottom-width: 1px;
+}
+
+.table thead th {
+    font-size: 0.65rem !important;
+    text-transform: uppercase !important;
+    font-weight: 600 !important;
+    padding: 0.75rem 1rem !important;
+}
+
+.table tbody tr:last-child td {
+    border-bottom: 0;
+}
+
+.table td {
+    font-size: 0.875rem !important;
+    padding: 1rem !important;
+}
+
+/* Badges */
+.badge {
+    text-transform: uppercase !important;
+    font-size: 0.65rem !important;
+    padding: 0.35rem 0.5rem !important;
+    font-weight: 600 !important;
+}
+
+.badge-sm {
+    padding: 0.25rem 0.4rem;
+    font-size: 0.625rem;
+}
+
+/* Animation */
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.card {
+    animation: fadeIn 0.5s ease-out;
+}
+
+/* Value Animations */
+@keyframes numberChange {
+    0% {
+        transform: translateY(-10px);
+        opacity: 0;
+    }
+    100% {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.card .numbers h5.changed {
+    animation: numberChange 0.3s ease-out;
+}
+
+/* Glass Effect */
+.card::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -50%;
+    width: 200%;
+    height: 100%;
+    background: linear-gradient(
+        60deg,
+        transparent,
+        rgba(255,255,255,0.1),
+        transparent
+    );
+    transform: rotate(30deg);
+    transition: 0.5s;
+    opacity: 0;
+}
+
+.card:hover::after {
+    opacity: 1;
+    left: 100%;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .card {
+        margin-bottom: 1rem;
+    }
+    
+    .icon {
+        width: 40px;
+        height: 40px;
+    }
+    
+    .icon i {
+        font-size: 1rem;
+    }
+    
+    .card .numbers h5 {
+        font-size: 1.25rem;
+    }
+}
+
+/* Custom Scrollbar */
+.table-responsive::-webkit-scrollbar {
+    width: 6px;
+    height: 6px;
+}
+
+.table-responsive::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 3px;
+}
+
+.table-responsive::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* Hover Effects */
+.table tbody tr {
+    transition: all 0.2s ease;
+}
+
+.table tbody tr:hover {
+    background-color: rgba(0,0,0,.03);
+}
+
+/* Estilos para a página de gestão */
+.border-left-primary {
+    border-left: 4px solid #4e73df !important;
+}
+
+.border-left-success {
+    border-left: 4px solid #1cc88a !important;
+}
+
+.border-left-info {
+    border-left: 4px solid #36b9cc !important;
+}
+
+.border-left-warning {
+    border-left: 4px solid #f6c23e !important;
+}
+
+.chart-area {
+    position: relative;
+    height: 20rem;
+    width: 100%;
+}
+
+.chart-pie {
+    position: relative;
+    height: 15rem;
+    width: 100%;
+}
+
+.progress {
+    height: 1rem;
+    margin-bottom: 1rem;
+}
+
+.card-header {
+    background-color: #f8f9fc;
+    border-bottom: 1px solid #e3e6f0;
+}
+
+.text-primary {
+    color: #4e73df !important;
+}
+
+.text-success {
+    color: #1cc88a !important;
+}
+
+.text-info {
+    color: #36b9cc !important;
+}
+
+.text-warning {
+    color: #f6c23e !important;
+}
+
+.text-danger {
+    color: #e74a3b !important;
+}
+
+.text-gray-300 {
+    color: #dddfeb !important;
+}
+
+.text-gray-800 {
+    color: #5a5c69 !important;
+}
+
+.shadow {
+    box-shadow: 0 .15rem 1.75rem 0 rgba(58,59,69,.15) !important;
+}
+
+.card {
+    margin-bottom: 1.5rem;
+}
+
+.font-weight-bold {
+    font-weight: 700 !important;
+}
+
+.text-xs {
+    font-size: .7rem;
+}
+
+.text-uppercase {
+    text-transform: uppercase !important;
+}
+
+.mb-1 {
+    margin-bottom: .25rem !important;
+}
+
+.mb-4 {
+    margin-bottom: 1.5rem !important;
+}
+
+.py-2 {
+    padding-top: .5rem !important;
+    padding-bottom: .5rem !important;
+}
+
+.py-3 {
+    padding-top: 1rem !important;
+    padding-bottom: 1rem !important;
+}
+
+.py-4 {
+    padding-top: 1.5rem !important;
+    padding-bottom: 1.5rem !important;
+}
+
+.h-100 {
+    height: 100% !important;
+}
+
+.mr-2 {
+    margin-right: .5rem !important;
+}
+
+.fa-2x {
+    font-size: 2em;
+}

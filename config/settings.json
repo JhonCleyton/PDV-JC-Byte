@@ -1,0 +1,24 @@
+{
+    "company_name": "Meu Supermercado",
+    "cnpj": "",
+    "address": "",
+    "phone": "",
+    "receipt": {
+        "header": [
+            "{company_name}",
+            "CNPJ: {cnpj}",
+            "{address}",
+            "Tel: {phone}"
+        ],
+        "footer": [
+            "Obrigado pela preferência!",
+            "Volte sempre!"
+        ]
+    },
+    "shortcuts": {
+        "price_check": "F3",
+        "cancel_item": "F4",
+        "cancel_sale": "F5",
+        "finish_sale": "F10"
+    }
+}
