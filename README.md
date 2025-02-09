@@ -142,6 +142,6 @@ Todos os direitos reservados.
 ---
 
 <div align="center">
-  <p>Desenvolvido com ❤️ por JC Byte - Soluções em Tecnologia</p>
+  <p>Desenvolvido por JC Byte - Soluções em Tecnologia</p>
   <p>© 2024 JC Byte. Todos os direitos reservados.</p>
 </div>
