@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">Gerenciar Vendas</h1>
+        <a href="{{ url_for('vendas.create') }}" class="btn btn-primary">
+            <i class="bi bi-plus"></i> Nova Venda
+        </a>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Data</th>
+                            <th>Cliente</th>
+                            <th>Total</th>
+                            <th>Forma de Pagamento</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for sale in sales %}
+                        <tr>
+                            <td>{{ sale.id }}</td>
+                            <td>{{ sale.date.strftime('%d/%m/%Y %H:%M') }}</td>
+                            <td>{{ sale.customer.name if sale.customer else '-' }}</td>
+                            <td>R$ {{ "%.2f"|format(sale.total) }}</td>
+                            <td>{{ sale.payment_method }}</td>
+                            <td>
+                                {% if sale.status == 'concluída' %}
+                                <span class="badge bg-success">Concluída</span>
+                                {% elif sale.status == 'pendente' %}
+                                <span class="badge bg-warning">Pendente</span>
+                                {% elif sale.status == 'cancelada' %}
+                                <span class="badge bg-danger">Cancelada</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="viewSale({{ sale.id }})">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                    {% if sale.status != 'concluída' %}
+                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteSale({{ sale.id }})">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                    {% endif %}
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Visualização -->
+<div class="modal fade" id="saleModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/sales.js') }}"></script>
+<script>
+function deleteSale(id) {
+    if (confirm('Tem certeza que deseja cancelar esta venda?')) {
+        $.ajax({
+            url: `/api/sales/${id}`,
+            method: 'DELETE',
+            success: function(response) {
+                if (response.success) {
+                    window.location.reload();
+                } else {
+                    alert('Erro ao cancelar venda: ' + response.error);
+                }
+            },
+            error: function(xhr) {
+                alert('Erro ao cancelar venda: ' + xhr.responseText);
+            }
+        });
+    }
+}
+
+// Inicialização
+$(document).ready(function() {
+    // Adicione aqui qualquer inicialização necessária
+});
+</script>
+{% endblock %}

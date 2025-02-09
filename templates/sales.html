@@ -1,0 +1,230 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <!-- Nova Venda -->
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Nova Venda</h5>
+                </div>
+                <div class="card-body">
+                    <!-- Cliente -->
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <label class="form-label">Cliente</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="customer-search" placeholder="Buscar por nome ou CPF">
+                                <button class="btn btn-outline-secondary" type="button" id="select-customer">
+                                    <i class="bi bi-person"></i> Selecionar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Produto -->
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <label class="form-label">Produto</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="product-search" placeholder="Buscar por código ou nome">
+                                <button class="btn btn-outline-secondary" type="button" id="select-product">
+                                    <i class="bi bi-box"></i> Selecionar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Itens da Venda -->
+                    <div class="table-responsive">
+                        <table class="table table-striped" id="sale-items">
+                            <thead>
+                                <tr>
+                                    <th>Código</th>
+                                    <th>Produto</th>
+                                    <th class="text-end">Quantidade</th>
+                                    <th class="text-end">Preço</th>
+                                    <th class="text-end">Desconto</th>
+                                    <th class="text-end">Total</th>
+                                    <th style="width: 50px"></th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="5" class="text-end"><strong>Total:</strong></td>
+                                    <td class="text-end" id="sale-total">R$ 0,00</td>
+                                    <td></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <!-- Cliente Selecionado -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Cliente</h5>
+                </div>
+                <div class="card-body">
+                    <div id="customer-info">
+                        <p class="text-muted">Nenhum cliente selecionado</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Pagamento -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">Pagamento</h5>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label class="form-label">Forma de Pagamento</label>
+                        <select class="form-select" id="payment-method">
+                            <option value="cash">Dinheiro</option>
+                            <option value="credit_card">Cartão de Crédito</option>
+                            <option value="debit_card">Cartão de Débito</option>
+                            <option value="credit">Crediário</option>
+                        </select>
+                    </div>
+
+                    <div id="credit-options" style="display: none;">
+                        <div class="mb-3">
+                            <label class="form-label">Data de Vencimento</label>
+                            <input type="date" class="form-control" id="due-date">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Valor Recebido</label>
+                        <div class="input-group">
+                            <span class="input-group-text">R$</span>
+                            <input type="number" class="form-control text-end" id="amount-paid" min="0" step="0.01">
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label class="form-label">Troco</label>
+                        <div class="input-group">
+                            <span class="input-group-text">R$</span>
+                            <input type="number" class="form-control text-end" id="change" readonly>
+                        </div>
+                    </div>
+
+                    <div class="d-grid gap-2">
+                        <button class="btn btn-primary" type="button" id="finish-sale">
+                            <i class="bi bi-check-circle"></i> Finalizar Venda
+                        </button>
+                        <button class="btn btn-secondary" type="button" id="cancel-sale">
+                            <i class="bi bi-x-circle"></i> Cancelar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Seleção de Cliente -->
+    <div class="modal fade" id="customerModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Selecionar Cliente</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control" id="customer-modal-search" placeholder="Buscar por nome ou CPF">
+                        <button class="btn btn-outline-secondary" type="button">
+                            <i class="bi bi-search"></i>
+                        </button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="customer-table">
+                            <thead>
+                                <tr>
+                                    <th>Nome</th>
+                                    <th>CPF</th>
+                                    <th>Telefone</th>
+                                    <th>Limite</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Seleção de Produto -->
+    <div class="modal fade" id="productModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Selecionar Produto</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control" id="product-modal-search" placeholder="Buscar por código ou nome">
+                        <button class="btn btn-outline-secondary" type="button">
+                            <i class="bi bi-search"></i>
+                        </button>
+                    </div>
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="product-table">
+                            <thead>
+                                <tr>
+                                    <th>Código</th>
+                                    <th>Nome</th>
+                                    <th>Preço</th>
+                                    <th>Estoque</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Quantidade -->
+    <div class="modal fade" id="quantityModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Quantidade</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label">Quantidade</label>
+                        <input type="number" class="form-control" id="quantity" min="1" value="1">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Desconto (%)</label>
+                        <input type="number" class="form-control" id="discount" min="0" max="100" value="0">
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    <button type="button" class="btn btn-primary" id="add-item">Adicionar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/sales.js') }}"></script>
+{% endblock %}

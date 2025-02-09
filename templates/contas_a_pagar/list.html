@@ -1,0 +1,212 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">Contas a Pagar</h1>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalPayable">
+            <i class="bi bi-plus"></i> Nova Conta
+        </button>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Fornecedor</th>
+                            <th>Descrição</th>
+                            <th>Valor</th>
+                            <th>Vencimento</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for payable in payables %}
+                        <tr>
+                            <td>{{ payable.supplier.name }}</td>
+                            <td>{{ payable.description }}</td>
+                            <td>R$ {{ "%.2f"|format(payable.amount) }}</td>
+                            <td>{{ payable.due_date.strftime('%d/%m/%Y') }}</td>
+                            <td>
+                                {% if payable.status == 'pending' %}
+                                <span class="badge bg-warning">Pendente</span>
+                                {% elif payable.status == 'paid' %}
+                                <span class="badge bg-success">Pago</span>
+                                {% elif payable.status == 'overdue' %}
+                                <span class="badge bg-danger">Vencido</span>
+                                {% elif payable.status == 'partial' %}
+                                <span class="badge bg-info">Parcial</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="editPayable({{ payable.id }})">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="deletePayable({{ payable.id }})">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Nova/Editar Conta -->
+<div class="modal fade" id="modalPayable" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Nova Conta a Pagar</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formPayable">
+                    <input type="hidden" id="payableId">
+                    <div class="mb-3">
+                        <label for="supplier" class="form-label">Fornecedor</label>
+                        <select class="form-select" id="supplier" required>
+                            <option value="">Selecione um fornecedor</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Descrição</label>
+                        <input type="text" class="form-control" id="description" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="amount" class="form-label">Valor</label>
+                        <input type="number" class="form-control" id="amount" step="0.01" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="dueDate" class="form-label">Data de Vencimento</label>
+                        <input type="date" class="form-control" id="dueDate" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="status" class="form-label">Status</label>
+                        <select class="form-select" id="status">
+                            <option value="pending">Pendente</option>
+                            <option value="paid">Pago</option>
+                            <option value="overdue">Vencido</option>
+                            <option value="partial">Parcial</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="paymentMethod" class="form-label">Forma de Pagamento</label>
+                        <select class="form-select" id="paymentMethod">
+                            <option value="">Selecione</option>
+                            <option value="dinheiro">Dinheiro</option>
+                            <option value="cartao_credito">Cartão de Crédito</option>
+                            <option value="cartao_debito">Cartão de Débito</option>
+                            <option value="pix">PIX</option>
+                            <option value="boleto">Boleto</option>
+                            <option value="transferencia">Transferência</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Observações</label>
+                        <textarea class="form-control" id="notes" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="savePayable()">Salvar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Carregar fornecedores ao abrir o modal
+$('#modalPayable').on('show.bs.modal', function () {
+    $.get('/api/suppliers')
+        .done(function(response) {
+            const select = $('#supplier');
+            select.empty();
+            select.append('<option value="">Selecione um fornecedor</option>');
+            response.data.forEach(function(supplier) {
+                select.append(`<option value="${supplier.id}">${supplier.name}</option>`);
+            });
+        })
+        .fail(function(error) {
+            console.error('Erro ao carregar fornecedores:', error);
+            alert('Erro ao carregar fornecedores. Por favor, tente novamente.');
+        });
+});
+
+function editPayable(id) {
+    $.get(`/api/contas-a-pagar/${id}`)
+        .done(function(response) {
+            const payable = response.data;
+            $('#payableId').val(payable.id);
+            $('#supplier').val(payable.supplier_id);
+            $('#description').val(payable.description);
+            $('#amount').val(payable.amount);
+            $('#dueDate').val(payable.due_date.split('T')[0]);
+            $('#status').val(payable.status);
+            $('#paymentMethod').val(payable.payment_method);
+            $('#notes').val(payable.notes);
+            $('#modalPayable').modal('show');
+        })
+        .fail(function(error) {
+            console.error('Erro ao carregar conta:', error);
+            alert('Erro ao carregar conta. Por favor, tente novamente.');
+        });
+}
+
+function savePayable() {
+    const id = $('#payableId').val();
+    const data = {
+        supplier_id: $('#supplier').val(),
+        description: $('#description').val(),
+        amount: parseFloat($('#amount').val()),
+        due_date: $('#dueDate').val(),
+        status: $('#status').val(),
+        payment_method: $('#paymentMethod').val(),
+        notes: $('#notes').val()
+    };
+
+    const url = id ? `/api/contas-a-pagar/${id}` : '/api/contas-a-pagar';
+    const method = id ? 'PUT' : 'POST';
+
+    $.ajax({
+        url: url,
+        method: method,
+        contentType: 'application/json',
+        data: JSON.stringify(data)
+    })
+    .done(function() {
+        location.reload();
+    })
+    .fail(function(error) {
+        console.error('Erro ao salvar conta:', error);
+        alert('Erro ao salvar conta. Por favor, tente novamente.');
+    });
+}
+
+function deletePayable(id) {
+    if (confirm('Tem certeza que deseja excluir esta conta?')) {
+        $.ajax({
+            url: `/api/contas-a-pagar/${id}`,
+            method: 'DELETE'
+        })
+        .done(function() {
+            location.reload();
+        })
+        .fail(function(error) {
+            console.error('Erro ao excluir conta:', error);
+            alert('Erro ao excluir conta. Por favor, tente novamente.');
+        });
+    }
+}
+</script>
+{% endblock %}

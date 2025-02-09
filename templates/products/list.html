@@ -1,0 +1,423 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">Produtos</h1>
+        <div class="d-flex gap-2">
+            <a href="{{ url_for('products.list_invoices') }}" class="btn btn-info">
+                <i class="bi bi-file-earmark-text-fill"></i> Notas Fiscais
+            </a>
+            <a href="{{ url_for('products.add_invoice') }}" class="btn btn-success">
+                <i class="bi bi-plus-circle"></i> Nova NF
+            </a>
+            <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#productModal">
+                <i class="bi bi-plus"></i> Novo Produto
+            </button>
+        </div>
+    </div>
+
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="category">Categoria</label>
+                        <select class="form-control" id="category">
+                            <option value="">Todas</option>
+                            {% for category in categories %}
+                            <option value="{{ category.id }}">{{ category.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="supplier">Fornecedor</label>
+                        <select class="form-control" id="supplier">
+                            <option value="">Todos</option>
+                            {% for supplier in suppliers %}
+                            <option value="{{ supplier.id }}">{{ supplier.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="stock_status">Status do Estoque</label>
+                        <select class="form-control" id="stock_status">
+                            <option value="">Todos</option>
+                            <option value="low">Baixo</option>
+                            <option value="normal">Normal</option>
+                            <option value="high">Alto</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="search">Buscar</label>
+                        <input type="text" class="form-control" id="search" placeholder="Nome ou código">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabela de Produtos -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Código</th>
+                            <th>Nome</th>
+                            <th>Categoria</th>
+                            <th>Fornecedor</th>
+                            <th class="text-end">Preço de Custo</th>
+                            <th class="text-end">Markup (%)</th>
+                            <th class="text-end">Preço de Venda</th>
+                            <th class="text-end">Estoque</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for product in products %}
+                        <tr>
+                            <td>{{ product.code }}</td>
+                            <td>{{ product.name }}</td>
+                            <td>{{ product.category.name if product.category else '-' }}</td>
+                            <td>{{ product.supplier.name if product.supplier else '-' }}</td>
+                            <td class="text-end">R$ {{ "%.2f"|format(product.cost_price) }}</td>
+                            <td class="text-end">{{ "%.2f"|format(product.markup) }}%</td>
+                            <td class="text-end">R$ {{ "%.2f"|format(product.selling_price) }}</td>
+                            <td class="text-end {% if product.stock <= product.min_stock %}text-danger{% endif %}">
+                                {{ product.stock }}
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="editProduct({{ product.id }})">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteProduct({{ product.id }})">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Produto -->
+<div class="modal fade" id="productModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Produto</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="productForm" novalidate>
+                    <input type="hidden" id="product_id">
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="code">Código</label>
+                                <input type="text" class="form-control" id="code" required>
+                                <div class="invalid-feedback">Campo obrigatório</div>
+                            </div>
+                        </div>
+                        <div class="col-md-8">
+                            <div class="form-group">
+                                <label for="name">Nome</label>
+                                <input type="text" class="form-control" id="name" required>
+                                <div class="invalid-feedback">Campo obrigatório</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group mb-3">
+                        <label for="description">Descrição</label>
+                        <textarea class="form-control" id="description" rows="2"></textarea>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="category_id">Categoria</label>
+                                <select class="form-control" id="category_id">
+                                    <option value="">Selecione...</option>
+                                    {% for category in categories %}
+                                    <option value="{{ category.id }}">{{ category.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="supplier_id">Fornecedor</label>
+                                <select class="form-control" id="supplier_id">
+                                    <option value="">Selecione...</option>
+                                    {% for supplier in suppliers %}
+                                    <option value="{{ supplier.id }}">{{ supplier.name }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="cost_price">Preço de Custo</label>
+                                <input type="number" class="form-control" id="cost_price" step="0.01" min="0" required>
+                                <div class="invalid-feedback">Campo obrigatório</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="markup">Markup (%)</label>
+                                <input type="number" class="form-control" id="markup" step="0.01" min="0" required>
+                                <div class="invalid-feedback">Campo obrigatório</div>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="selling_price">Preço de Venda</label>
+                                <input type="number" class="form-control" id="selling_price" step="0.01" min="0" readonly>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="stock">Estoque</label>
+                                <input type="number" class="form-control" id="stock" min="0" required>
+                                <div class="invalid-feedback">Campo obrigatório</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="min_stock">Estoque Mínimo</label>
+                                <input type="number" class="form-control" id="min_stock" min="0" required>
+                                <div class="invalid-feedback">Campo obrigatório</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="expiry_date">Data de Validade</label>
+                        <input type="date" class="form-control" id="expiry_date">
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="submit" class="btn btn-primary" form="productForm">Salvar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function loadProducts() {
+    const filters = {
+        category_id: $('#category').val(),
+        supplier_id: $('#supplier').val(),
+        stock_status: $('#stock_status').val(),
+        search: $('#search').val()
+    };
+
+    $.get('/api/products', filters)
+        .then(response => {
+            if (response.success) {
+                const tbody = $('table tbody');
+                tbody.empty();
+
+                response.data.forEach(product => {
+                    const row = `
+                        <tr>
+                            <td>${product.code}</td>
+                            <td>${product.name}</td>
+                            <td>${product.category ? product.category.name : '-'}</td>
+                            <td>${product.supplier ? product.supplier.name : '-'}</td>
+                            <td class="text-end">R$ ${product.cost_price.toFixed(2)}</td>
+                            <td class="text-end">${product.markup.toFixed(2)}%</td>
+                            <td class="text-end">R$ ${product.selling_price.toFixed(2)}</td>
+                            <td class="text-end ${product.stock <= product.min_stock ? 'text-danger' : ''}">${product.stock}</td>
+                            <td>
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="editProduct(${product.id})">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteProduct(${product.id})">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                    `;
+                    tbody.append(row);
+                });
+            } else {
+                showAlert('Erro ao carregar produtos: ' + response.error, 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Erro ao carregar produtos:', error);
+            showAlert('Erro ao carregar produtos. Verifique o console para mais detalhes.', 'danger');
+        });
+}
+
+function calculateSellingPrice() {
+    const costPrice = parseFloat($('#cost_price').val()) || 0;
+    const markup = parseFloat($('#markup').val()) || 0;
+    const sellingPrice = costPrice * (1 + markup / 100);
+    $('#selling_price').val(sellingPrice.toFixed(2));
+}
+
+function clearForm() {
+    const form = $('#productForm')[0];
+    form.reset();
+    form.classList.remove('was-validated');
+    $('#product_id').val('');
+    calculateSellingPrice();
+}
+
+function editProduct(id) {
+    $.get(`/api/products/${id}`)
+        .then(response => {
+            if (response.success) {
+                const product = response.data;
+                $('#product_id').val(product.id);
+                $('#code').val(product.code);
+                $('#name').val(product.name);
+                $('#description').val(product.description);
+                $('#category_id').val(product.category_id);
+                $('#supplier_id').val(product.supplier_id);
+                $('#cost_price').val(product.cost_price);
+                $('#markup').val(product.markup);
+                $('#stock').val(product.stock);
+                $('#min_stock').val(product.min_stock);
+                $('#expiry_date').val(product.expiry_date);
+                calculateSellingPrice();
+                $('#productModal').modal('show');
+            } else {
+                showAlert('Erro ao carregar produto: ' + response.error, 'danger');
+            }
+        })
+        .catch(error => {
+            console.error('Erro ao carregar produto:', error);
+            showAlert('Erro ao carregar produto. Verifique o console para mais detalhes.', 'danger');
+        });
+}
+
+function deleteProduct(id) {
+    if (confirm('Tem certeza que deseja excluir este produto?')) {
+        $.ajax({
+            url: `/api/products/${id}`,
+            method: 'DELETE',
+            success: function(response) {
+                if (response.success) {
+                    showAlert('Produto excluído com sucesso!');
+                    loadProducts();
+                } else {
+                    showAlert('Erro ao excluir produto: ' + response.error, 'danger');
+                }
+            },
+            error: function(xhr) {
+                console.error('Erro ao excluir produto:', xhr);
+                showAlert('Erro ao excluir produto. Verifique o console para mais detalhes.', 'danger');
+            }
+        });
+    }
+}
+
+function saveProduct() {
+    // Validate form
+    const form = $('#productForm')[0];
+    form.classList.add('was-validated');
+    if (!form.checkValidity()) {
+        return;
+    }
+
+    const data = {
+        code: $('#code').val().trim(),
+        name: $('#name').val().trim(),
+        description: $('#description').val().trim(),
+        category_id: $('#category_id').val() || null,
+        supplier_id: $('#supplier_id').val() || null,
+        cost_price: parseFloat($('#cost_price').val()) || 0,
+        markup: parseFloat($('#markup').val()) || 0,
+        stock: parseInt($('#stock').val()) || 0,
+        min_stock: parseInt($('#min_stock').val()) || 0,
+        expiry_date: $('#expiry_date').val() || null
+    };
+
+    const id = $('#product_id').val();
+    const method = id ? 'PUT' : 'POST';
+    const url = id ? `/api/products/${id}` : '/api/products';
+
+    $.ajax({
+        url: url,
+        method: method,
+        contentType: 'application/json',
+        data: JSON.stringify(data),
+        success: function(response) {
+            if (response.success) {
+                showAlert(id ? 'Produto atualizado com sucesso!' : 'Produto cadastrado com sucesso!');
+                $('#productModal').modal('hide');
+                form.classList.remove('was-validated');
+                loadProducts();
+            } else {
+                showAlert('Erro ao salvar produto: ' + response.error, 'danger');
+            }
+        },
+        error: function(xhr) {
+            console.error('Erro ao salvar produto:', xhr);
+            showAlert('Erro ao salvar produto. Verifique o console para mais detalhes.', 'danger');
+        }
+    });
+}
+
+function showAlert(message, type = 'success') {
+    const alertHtml = `
+        <div class="alert alert-${type} alert-dismissible fade show" role="alert">
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    `;
+    $('#alerts').html(alertHtml);
+}
+
+// Event Handlers
+$(document).ready(function() {
+    // Carregar produtos ao iniciar
+    loadProducts();
+
+    // Filtros
+    $('#category, #supplier, #stock_status').on('change', loadProducts);
+    $('#search').on('input', loadProducts);
+
+    // Cálculo automático do preço de venda
+    $('#cost_price, #markup').on('input', calculateSellingPrice);
+
+    // Limpar formulário ao abrir modal
+    $('#productModal').on('show.bs.modal', function() {
+        if (!$('#product_id').val()) {
+            clearForm();
+        }
+    });
+
+    // Salvar produto
+    $('#productForm').on('submit', function(e) {
+        e.preventDefault();
+        saveProduct();
+    });
+});
+</script>
+{% endblock %}

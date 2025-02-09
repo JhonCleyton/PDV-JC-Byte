@@ -1,0 +1,216 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">Contas a Receber</h1>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalReceivable">
+            <i class="bi bi-plus"></i> Nova Conta
+        </button>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Cliente</th>
+                            <th>Descrição</th>
+                            <th>Valor Total</th>
+                            <th>Valor Pago</th>
+                            <th>Valor Restante</th>
+                            <th>Vencimento</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for receivable in receivables %}
+                        <tr {% if receivable.status == 'overdue' %}class="table-danger"{% endif %}>
+                            <td>{{ receivable.customer.name }}</td>
+                            <td>{{ receivable.description }}</td>
+                            <td>R$ {{ "%.2f"|format(receivable.amount) }}</td>
+                            <td>R$ {{ "%.2f"|format(receivable.paid_amount) }}</td>
+                            <td>R$ {{ "%.2f"|format(receivable.remaining_amount) }}</td>
+                            <td>{{ receivable.due_date.strftime('%d/%m/%Y') }}</td>
+                            <td>
+                                {% if receivable.status == 'pending' %}
+                                <span class="badge bg-warning">Pendente</span>
+                                {% elif receivable.status == 'paid' %}
+                                <span class="badge bg-success">Pago</span>
+                                {% elif receivable.status == 'partial' %}
+                                <span class="badge bg-info">Parcial</span>
+                                {% elif receivable.status == 'overdue' %}
+                                <span class="badge bg-danger">Vencido</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="editReceivable({{ receivable.id }})">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteReceivable({{ receivable.id }})">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Nova/Editar Conta -->
+<div class="modal fade" id="modalReceivable" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Nova Conta a Receber</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formReceivable">
+                    <input type="hidden" id="receivableId">
+                    <div class="mb-3">
+                        <label for="customer" class="form-label">Cliente</label>
+                        <select class="form-select" id="customer" required>
+                            <option value="">Selecione um cliente</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Descrição</label>
+                        <input type="text" class="form-control" id="description" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="amount" class="form-label">Valor</label>
+                        <input type="number" class="form-control" id="amount" step="0.01" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="dueDate" class="form-label">Data de Vencimento</label>
+                        <input type="date" class="form-control" id="dueDate" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="status" class="form-label">Status</label>
+                        <select class="form-select" id="status">
+                            <option value="pending">Pendente</option>
+                            <option value="paid">Pago</option>
+                            <option value="partial">Parcial</option>
+                            <option value="overdue">Vencido</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="paymentMethod" class="form-label">Forma de Pagamento</label>
+                        <select class="form-select" id="paymentMethod">
+                            <option value="">Selecione</option>
+                            <option value="dinheiro">Dinheiro</option>
+                            <option value="cartao_credito">Cartão de Crédito</option>
+                            <option value="cartao_debito">Cartão de Débito</option>
+                            <option value="pix">PIX</option>
+                            <option value="boleto">Boleto</option>
+                            <option value="transferencia">Transferência</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Observações</label>
+                        <textarea class="form-control" id="notes" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="saveReceivable()">Salvar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Carregar clientes ao abrir o modal
+$('#modalReceivable').on('show.bs.modal', function () {
+    $.get('/api/clientes')
+        .done(function(response) {
+            const select = $('#customer');
+            select.empty();
+            select.append('<option value="">Selecione um cliente</option>');
+            response.data.forEach(function(customer) {
+                select.append(`<option value="${customer.id}">${customer.name}</option>`);
+            });
+        })
+        .fail(function(error) {
+            console.error('Erro ao carregar clientes:', error);
+            alert('Erro ao carregar clientes. Por favor, tente novamente.');
+        });
+});
+
+function editReceivable(id) {
+    $.get(`/api/contas-a-receber/${id}`)
+        .done(function(response) {
+            const receivable = response.data;
+            $('#receivableId').val(receivable.id);
+            $('#customer').val(receivable.customer_id);
+            $('#description').val(receivable.description);
+            $('#amount').val(receivable.amount);
+            $('#dueDate').val(receivable.due_date.split('T')[0]);
+            $('#status').val(receivable.status);
+            $('#paymentMethod').val(receivable.payment_method);
+            $('#notes').val(receivable.notes);
+            $('#modalReceivable').modal('show');
+        })
+        .fail(function(error) {
+            console.error('Erro ao carregar conta:', error);
+            alert('Erro ao carregar conta. Por favor, tente novamente.');
+        });
+}
+
+function saveReceivable() {
+    const id = $('#receivableId').val();
+    const data = {
+        customer_id: $('#customer').val(),
+        description: $('#description').val(),
+        amount: parseFloat($('#amount').val()),
+        due_date: $('#dueDate').val(),
+        status: $('#status').val(),
+        payment_method: $('#paymentMethod').val(),
+        notes: $('#notes').val()
+    };
+
+    const url = id ? `/api/contas-a-receber/${id}` : '/api/contas-a-receber';
+    const method = id ? 'PUT' : 'POST';
+
+    $.ajax({
+        url: url,
+        method: method,
+        contentType: 'application/json',
+        data: JSON.stringify(data)
+    })
+    .done(function() {
+        location.reload();
+    })
+    .fail(function(error) {
+        console.error('Erro ao salvar conta:', error);
+        alert('Erro ao salvar conta. Por favor, tente novamente.');
+    });
+}
+
+function deleteReceivable(id) {
+    if (confirm('Tem certeza que deseja excluir esta conta?')) {
+        $.ajax({
+            url: `/api/contas-a-receber/${id}`,
+            method: 'DELETE'
+        })
+        .done(function() {
+            location.reload();
+        })
+        .fail(function(error) {
+            console.error('Erro ao excluir conta:', error);
+            alert('Erro ao excluir conta. Por favor, tente novamente.');
+        });
+    }
+}
+</script>
+{% endblock %}

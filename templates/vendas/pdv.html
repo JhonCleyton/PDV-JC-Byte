@@ -1,0 +1,316 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid pdv-container">
+    <div class="row">
+        <!-- Área de Entrada e Total -->
+        <div class="col-md-8">
+            <div class="card mb-3">
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-8">
+                            <input type="text" id="inputProduto" class="form-control form-control-lg" 
+                                   placeholder="Quantidade*Código (ex: 3*123 ou 0,35*1254)" autofocus>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="total-display">
+                                <h2>TOTAL: R$ <span id="totalVenda">0,00</span></h2>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Lista de Itens -->
+            <div class="card">
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table" id="itemsTable">
+                            <thead>
+                                <tr>
+                                    <th>Código</th>
+                                    <th>Produto</th>
+                                    <th>Qtd</th>
+                                    <th>Un</th>
+                                    <th>Preço Un.</th>
+                                    <th>Total</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Área de Atalhos e Informações -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Atalhos</h5>
+                    <div class="list-group">
+                        <button class="list-group-item list-group-item-action" id="consultarPreco">
+                            F2 - Consultar Preço/Estoque
+                        </button>
+                        <button class="list-group-item list-group-item-action" id="consultarDividas">
+                            F3 - Consultar/Pagar Dívidas
+                        </button>
+                        <button class="list-group-item list-group-item-action" id="finalizarVenda">
+                            F4 - Finalizar Venda
+                        </button>
+                    </div>
+
+                    <!-- Informações do Cliente (opcional) -->
+                    <div class="mt-4">
+                        <h5 class="card-title">Cliente (opcional)</h5>
+                        <div class="input-group mb-3">
+                            <input type="text" class="form-control" id="matriculaCliente" placeholder="Matrícula">
+                            <button class="btn btn-outline-secondary" type="button" id="buscarCliente">
+                                <i class="bi bi-search"></i>
+                            </button>
+                        </div>
+                        <div id="infoCliente" class="d-none">
+                            <p><strong>Nome:</strong> <span id="nomeCliente"></span></p>
+                            <p><strong>Limite Disponível:</strong> R$ <span id="limiteDisponivel">0,00</span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Consulta de Preço -->
+<div class="modal fade" id="modalConsultaPreco" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Consulta de Preço e Estoque</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="input-group mb-3">
+                    <input type="text" class="form-control" id="codigoConsulta" 
+                           placeholder="Digite o código ou nome do produto">
+                    <button class="btn btn-primary" type="button" id="buscarProduto">Buscar</button>
+                </div>
+                <div class="table-responsive">
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Código</th>
+                                <th>Nome</th>
+                                <th>Preço</th>
+                                <th>Estoque</th>
+                                <th>Unidade</th>
+                            </tr>
+                        </thead>
+                        <tbody id="tabelaConsultaPreco">
+                            <!-- Resultados serão inseridos aqui -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fechar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Consulta de Dívidas -->
+<div class="modal fade" id="modalConsultaDividas" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Consulta de Dívidas</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="input-group mb-3">
+                    <input type="text" class="form-control" id="matriculaDividas" placeholder="Matrícula do Cliente">
+                    <button class="btn btn-primary" id="buscarDividas">Buscar</button>
+                </div>
+                <div class="table-responsive">
+                    <table class="table" id="tabelaDividas">
+                        <thead>
+                            <tr>
+                                <th>Data</th>
+                                <th>Valor Total</th>
+                                <th>Valor Pago</th>
+                                <th>Valor Restante</th>
+                                <th>Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Pagamento de Dívida -->
+<div class="modal fade" id="modalPagamentoDivida" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Pagamento de Dívida</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <input type="hidden" id="dividaId">
+                <div class="mb-3">
+                    <label class="form-label">Valor a Pagar</label>
+                    <input type="number" class="form-control" id="valorPagamento" step="0.01">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Forma de Pagamento</label>
+                    <select class="form-select" id="formaPagamentoDivida">
+                        <option value="dinheiro">Dinheiro</option>
+                        <option value="cartao_debito">Cartão de Débito</option>
+                        <option value="cartao_credito">Cartão de Crédito</option>
+                        <option value="pix">PIX</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="pagarDivida">Confirmar Pagamento</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Finalização de Venda -->
+<div class="modal fade" id="modalFinalizarVenda" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Finalizar Venda</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <label class="form-label">Total da Venda</label>
+                    <input type="text" class="form-control" id="totalVendaFinal" readonly>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Forma de Pagamento</label>
+                    <select class="form-select" id="formaPagamento" onchange="toggleParcelas()">
+                        <option value="dinheiro">Dinheiro</option>
+                        <option value="cartao_debito">Cartão de Débito</option>
+                        <option value="cartao_credito">Cartão de Crédito</option>
+                        <option value="pix">PIX</option>
+                        <option value="crediario">Crediário</option>
+                    </select>
+                </div>
+                <div id="divParcelas" class="mb-3 d-none">
+                    <label class="form-label">Número de Parcelas</label>
+                    <select class="form-select" id="numParcelas">
+                        <option value="1">1x</option>
+                        <option value="2">2x</option>
+                        <option value="3">3x</option>
+                        <option value="4">4x</option>
+                        <option value="5">5x</option>
+                        <option value="6">6x</option>
+                        <option value="7">7x</option>
+                        <option value="8">8x</option>
+                        <option value="9">9x</option>
+                        <option value="10">10x</option>
+                        <option value="11">11x</option>
+                        <option value="12">12x</option>
+                    </select>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Valor Recebido</label>
+                    <input type="number" class="form-control" id="valorRecebido" step="0.01">
+                </div>
+                <div class="mb-3">
+                    <label class="form-label">Troco</label>
+                    <input type="text" class="form-control" id="trocoVenda" readonly>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="confirmarVenda">Confirmar Venda</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Confirmação de Venda Sem Limite -->
+<div class="modal fade" id="modalConfirmSemLimite" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Atenção: Cliente Sem Limite</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-warning">
+                    <i class="bi bi-exclamation-triangle me-2"></i>
+                    <span id="msgSemLimite"></span>
+                </div>
+                
+                <p>Para prosseguir com esta venda, é necessária a autorização de um supervisor.</p>
+                
+                <form id="formAutorizacao">
+                    <div class="mb-3">
+                        <label class="form-label">Usuário</label>
+                        <input type="text" class="form-control" id="authUser" required>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label">Senha</label>
+                        <input type="password" class="form-control" id="authPass" required>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" id="btnAutorizar">Autorizar Venda</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/busca_cliente.js') }}"></script>
+<script src="{{ url_for('static', filename='js/pdv.js') }}"></script>
+{% endblock %}
+
+{% block styles %}
+<style>
+.pdv-container {
+    padding: 20px;
+}
+
+.total-display {
+    background-color: #000;
+    color: #fff;
+    padding: 10px;
+    border-radius: 5px;
+    text-align: right;
+}
+
+.total-display h2 {
+    margin: 0;
+    font-size: 2rem;
+}
+
+#itemsTable {
+    font-size: 1.1rem;
+}
+
+.list-group-item {
+    cursor: pointer;
+}
+
+.list-group-item:hover {
+    background-color: #f8f9fa;
+}
+</style>
+{% endblock %}

@@ -1,0 +1,101 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col">
+            <h2>Categorias</h2>
+        </div>
+        <div class="col text-end">
+            <button type="button" class="btn btn-primary" id="newCategoryBtn">
+                <i class="bi bi-plus"></i> Nova Categoria
+            </button>
+        </div>
+    </div>
+
+    <!-- Alertas -->
+    <div id="alerts"></div>
+
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row">
+                <div class="col">
+                    <div class="input-group">
+                        <span class="input-group-text">
+                            <i class="bi bi-search"></i>
+                        </span>
+                        <input type="text" class="form-control" id="search" placeholder="Buscar por nome">
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Tabela de Categorias -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped table-hover" id="categoriesTable">
+                    <thead>
+                        <tr>
+                            <th>Nome</th>
+                            <th>Descrição</th>
+                            <th>Categoria Pai</th>
+                            <th>Produtos</th>
+                            <th style="width: 120px">Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Formulário de Categoria -->
+    <form id="categoryForm" class="card mt-4" style="display: none;">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="card-title mb-0">Cadastro de Categoria</h5>
+            <button type="button" class="btn-close" id="cancelBtn"></button>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="mb-3">
+                        <label class="form-label">Nome</label>
+                        <input type="text" class="form-control" id="name" name="name" required>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="mb-3">
+                        <label class="form-label">Descrição</label>
+                        <textarea class="form-control" id="description" name="description" rows="2"></textarea>
+                    </div>
+                </div>
+            </div>
+
+            <div class="row">
+                <div class="col-md-12">
+                    <div class="mb-3">
+                        <label class="form-label">Categoria Pai</label>
+                        <select class="form-select" id="parent_id" name="parent_id">
+                            <option value="">Nenhuma</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card-footer text-end">
+            <button type="button" class="btn btn-secondary" id="cancelBtn">Cancelar</button>
+            <button type="submit" class="btn btn-primary" id="saveBtn">Salvar</button>
+        </div>
+    </form>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/categories.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,128 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <!-- Resumo de Vendas -->
+        <div class="col-md-3">
+            <div class="card text-white bg-primary">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="bi bi-cart"></i> Vendas do Dia
+                    </h5>
+                    <h3 class="card-text" id="today-sales">R$ 0,00</h3>
+                </div>
+            </div>
+        </div>
+
+        <!-- Clientes Ativos -->
+        <div class="col-md-3">
+            <div class="card text-white bg-success">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="bi bi-people"></i> Clientes Ativos
+                    </h5>
+                    <h3 class="card-text" id="active-customers">0</h3>
+                </div>
+            </div>
+        </div>
+
+        <!-- Produtos em Baixa -->
+        <div class="col-md-3">
+            <div class="card text-white bg-warning">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="bi bi-exclamation-triangle"></i> Produtos em Baixa
+                    </h5>
+                    <h3 class="card-text" id="low-stock">0</h3>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contas a Receber -->
+        <div class="col-md-3">
+            <div class="card text-white bg-danger">
+                <div class="card-body">
+                    <h5 class="card-title">
+                        <i class="bi bi-cash"></i> A Receber
+                    </h5>
+                    <h3 class="card-text" id="total-receivables">R$ 0,00</h3>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <!-- Últimas Vendas -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-clock-history"></i> Últimas Vendas
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="recent-sales">
+                            <thead>
+                                <tr>
+                                    <th>Data</th>
+                                    <th>Cliente</th>
+                                    <th class="text-end">Total</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Produtos Mais Vendidos -->
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-graph-up"></i> Produtos Mais Vendidos
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="top-products">
+                            <thead>
+                                <tr>
+                                    <th>Produto</th>
+                                    <th class="text-end">Quantidade</th>
+                                    <th class="text-end">Total</th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mt-4">
+        <!-- Notificações -->
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="card-title mb-0">
+                        <i class="bi bi-bell"></i> Notificações
+                    </h5>
+                </div>
+                <div class="card-body">
+                    <div class="list-group" id="notifications"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/index.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,172 @@
+{% extends 'base.html' %}
+
+{% block title %}Gerenciamento de Vendas{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4">Gerenciamento de Vendas</h1>
+
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="start_date">Data Inicial</label>
+                        <input type="date" class="form-control" id="start_date">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="end_date">Data Final</label>
+                        <input type="date" class="form-control" id="end_date">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="payment_method">Forma de Pagamento</label>
+                        <select class="form-control" id="payment_method">
+                            <option value="">Todas</option>
+                            <option value="cash">Dinheiro</option>
+                            <option value="credit_card">Cartão de Crédito</option>
+                            <option value="debit_card">Cartão de Débito</option>
+                            <option value="credit">Crediário</option>
+                            <option value="pix">PIX</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="status">Status</label>
+                        <select class="form-control" id="status">
+                            <option value="">Todos</option>
+                            <option value="completed">Concluída</option>
+                            <option value="canceled">Cancelada</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col">
+                    <button class="btn btn-primary" onclick="filterSales()">Filtrar</button>
+                    <button class="btn btn-secondary" onclick="clearFilters()">Limpar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de Vendas -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Data</th>
+                            <th>Cliente</th>
+                            <th>Total</th>
+                            <th>Forma de Pagamento</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="sales-table">
+                        <!-- Preenchido via JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function filterSales() {
+    const filters = {
+        start_date: document.getElementById('start_date').value,
+        end_date: document.getElementById('end_date').value,
+        payment_method: document.getElementById('payment_method').value,
+        status: document.getElementById('status').value
+    };
+
+    fetch('/api/sales/list?' + new URLSearchParams(filters))
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const tbody = document.getElementById('sales-table');
+                tbody.innerHTML = '';
+
+                data.data.forEach(sale => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${sale.id}</td>
+                        <td>${new Date(sale.date).toLocaleString()}</td>
+                        <td>${sale.customer ? sale.customer.name : '-'}</td>
+                        <td>R$ ${sale.total.toFixed(2)}</td>
+                        <td>${formatPaymentMethod(sale.payment_method)}</td>
+                        <td>${formatStatus(sale.status)}</td>
+                        <td>
+                            <button class="btn btn-sm btn-info" onclick="printSale(${sale.id})">
+                                <i class="fas fa-print"></i>
+                            </button>
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            }
+        })
+        .catch(error => console.error('Erro ao carregar vendas:', error));
+}
+
+function clearFilters() {
+    document.getElementById('start_date').value = '';
+    document.getElementById('end_date').value = '';
+    document.getElementById('payment_method').value = '';
+    document.getElementById('status').value = '';
+    filterSales();
+}
+
+function formatPaymentMethod(method) {
+    const methods = {
+        'cash': 'Dinheiro',
+        'credit_card': 'Cartão de Crédito',
+        'debit_card': 'Cartão de Débito',
+        'credit': 'Crediário',
+        'pix': 'PIX'
+    };
+    return methods[method] || method;
+}
+
+function formatStatus(status) {
+    const statuses = {
+        'completed': 'Concluída',
+        'canceled': 'Cancelada'
+    };
+    return statuses[status] || status;
+}
+
+function printSale(id) {
+    fetch(`/api/sales/print/${id}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                // Envia para impressão
+                const printWindow = window.open('', '_blank');
+                printWindow.document.write(`
+                    <pre style="font-family: monospace; white-space: pre; margin: 0;">
+                        ${data.data.content}
+                    </pre>
+                `);
+                printWindow.document.close();
+                printWindow.print();
+            }
+        })
+        .catch(error => console.error('Erro ao imprimir venda:', error));
+}
+
+// Carrega as vendas ao iniciar
+document.addEventListener('DOMContentLoaded', filterSales);
+</script>
+{% endblock %}

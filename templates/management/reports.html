@@ -1,0 +1,196 @@
+{% extends "base.html" %}
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header pb-0">
+                    <h6>Relatórios</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <!-- Relatório de Vendas -->
+                        <div class="col-md-4 mb-4">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title">Relatório de Vendas</h5>
+                                    <p class="card-text">Análise detalhada das vendas por período</p>
+                                    <form action="{{ url_for('management.sales_report') }}" method="post">
+                                        <div class="mb-3">
+                                            <label class="form-label">Data Inicial</label>
+                                            <input type="date" class="form-control" name="start_date" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Data Final</label>
+                                            <input type="date" class="form-control" name="end_date" required>
+                                        </div>
+                                        <button type="submit" class="btn btn-primary">Gerar Relatório</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Relatório de Produtos -->
+                        <div class="col-md-4 mb-4">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title">Relatório de Produtos</h5>
+                                    <p class="card-text">Análise de estoque e movimentação</p>
+                                    <form action="{{ url_for('management.products_report') }}" method="post">
+                                        <div class="mb-3">
+                                            <label class="form-label">Categoria</label>
+                                            <select class="form-control" name="category">
+                                                <option value="">Todas</option>
+                                                {% for category in categories %}
+                                                <option value="{{ category.id }}">{{ category.name }}</option>
+                                                {% endfor %}
+                                            </select>
+                                        </div>
+                                        <div class="mb-3">
+                                            <div class="form-check">
+                                                <input class="form-check-input" type="checkbox" name="low_stock" id="lowStock">
+                                                <label class="form-check-label" for="lowStock">
+                                                    Apenas Estoque Baixo
+                                                </label>
+                                            </div>
+                                        </div>
+                                        <button type="submit" class="btn btn-primary">Gerar Relatório</button>
+                                    </form>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Relatório Financeiro -->
+                        <div class="col-md-4 mb-4">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h5 class="card-title">Relatório Financeiro</h5>
+                                    <p class="card-text">Análise de receitas e despesas</p>
+                                    
+                                    <!-- Seletor de tipo de período -->
+                                    <div class="mb-3">
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="period_type" id="monthYear" value="month_year" checked>
+                                            <label class="form-check-label" for="monthYear">
+                                                Por Mês/Ano
+                                            </label>
+                                        </div>
+                                        <div class="form-check">
+                                            <input class="form-check-input" type="radio" name="period_type" id="dateRange" value="date_range">
+                                            <label class="form-check-label" for="dateRange">
+                                                Por Período
+                                            </label>
+                                        </div>
+                                    </div>
+                                    
+                                    <form id="financialReportForm" action="{{ url_for('management.financial_report') }}" method="post">
+                                        <!-- Seleção por Mês/Ano -->
+                                        <div id="monthYearFields">
+                                            <div class="mb-3">
+                                                <label class="form-label">Mês</label>
+                                                <select class="form-control" name="month">
+                                                    <option value="1">Janeiro</option>
+                                                    <option value="2">Fevereiro</option>
+                                                    <option value="3">Março</option>
+                                                    <option value="4">Abril</option>
+                                                    <option value="5">Maio</option>
+                                                    <option value="6">Junho</option>
+                                                    <option value="7">Julho</option>
+                                                    <option value="8">Agosto</option>
+                                                    <option value="9">Setembro</option>
+                                                    <option value="10">Outubro</option>
+                                                    <option value="11">Novembro</option>
+                                                    <option value="12">Dezembro</option>
+                                                </select>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Ano</label>
+                                                <select class="form-control" name="year">
+                                                    {% for year in range(2024, 2030) %}
+                                                    <option value="{{ year }}">{{ year }}</option>
+                                                    {% endfor %}
+                                                </select>
+                                            </div>
+                                        </div>
+                                        
+                                        <!-- Seleção por Período -->
+                                        <div id="dateRangeFields" style="display: none;">
+                                            <div class="mb-3">
+                                                <label class="form-label">Data Inicial</label>
+                                                <input type="date" class="form-control" name="start_date">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Data Final</label>
+                                                <input type="date" class="form-control" name="end_date">
+                                            </div>
+                                        </div>
+                                        
+                                        <button type="submit" class="btn btn-primary">Gerar Relatório</button>
+                                    </form>
+                                    
+                                    <script>
+                                        document.addEventListener('DOMContentLoaded', function() {
+                                            const monthYearFields = document.getElementById('monthYearFields');
+                                            const dateRangeFields = document.getElementById('dateRangeFields');
+                                            const form = document.getElementById('financialReportForm');
+                                            
+                                            // Função para alternar campos
+                                            function toggleFields(periodType) {
+                                                if (periodType === 'month_year') {
+                                                    monthYearFields.style.display = 'block';
+                                                    dateRangeFields.style.display = 'none';
+                                                    // Limpa campos de data
+                                                    dateRangeFields.querySelectorAll('input').forEach(input => input.value = '');
+                                                } else {
+                                                    monthYearFields.style.display = 'none';
+                                                    dateRangeFields.style.display = 'block';
+                                                    // Limpa campos de mês/ano
+                                                    monthYearFields.querySelectorAll('select').forEach(select => select.selectedIndex = 0);
+                                                }
+                                            }
+                                            
+                                            // Monitora mudanças no tipo de período
+                                            document.querySelectorAll('input[name="period_type"]').forEach(radio => {
+                                                radio.addEventListener('change', function() {
+                                                    toggleFields(this.value);
+                                                });
+                                            });
+                                            
+                                            // Valida o formulário antes de enviar
+                                            form.addEventListener('submit', function(e) {
+                                                e.preventDefault();
+                                                const periodType = document.querySelector('input[name="period_type"]:checked').value;
+                                                
+                                                if (periodType === 'month_year') {
+                                                    // Remove campos de data
+                                                    form.querySelector('input[name="start_date"]').remove();
+                                                    form.querySelector('input[name="end_date"]').remove();
+                                                } else {
+                                                    // Remove campos de mês/ano
+                                                    form.querySelector('select[name="month"]').remove();
+                                                    form.querySelector('select[name="year"]').remove();
+                                                    
+                                                    // Valida datas
+                                                    const startDate = form.querySelector('input[name="start_date"]').value;
+                                                    const endDate = form.querySelector('input[name="end_date"]').value;
+                                                    
+                                                    if (!startDate || !endDate) {
+                                                        alert('Por favor, preencha as datas inicial e final.');
+                                                        return;
+                                                    }
+                                                }
+                                                
+                                                form.submit();
+                                            });
+                                        });
+                                    </script>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

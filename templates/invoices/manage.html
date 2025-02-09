@@ -1,0 +1,408 @@
+{% extends 'base.html' %}
+
+{% block title %}Gerenciamento de Notas Fiscais{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4">Gerenciamento de Notas Fiscais</h1>
+
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="supplier">Fornecedor</label>
+                        <select class="form-control" id="supplier">
+                            <option value="">Todos</option>
+                            <!-- Preenchido via JavaScript -->
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="start_date">Data Inicial</label>
+                        <input type="date" class="form-control" id="start_date">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="end_date">Data Final</label>
+                        <input type="date" class="form-control" id="end_date">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="status">Status</label>
+                        <select class="form-control" id="status">
+                            <option value="">Todos</option>
+                            <option value="pending">Pendente</option>
+                            <option value="paid">Paga</option>
+                            <option value="canceled">Cancelada</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col">
+                    <button class="btn btn-primary" onclick="filterInvoices()">Filtrar</button>
+                    <button class="btn btn-secondary" onclick="clearFilters()">Limpar</button>
+                    <button class="btn btn-success" onclick="showNewInvoiceModal()">Nova Nota Fiscal</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de Notas Fiscais -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>Número</th>
+                            <th>Fornecedor</th>
+                            <th>Data Emissão</th>
+                            <th>Total</th>
+                            <th>Forma de Pagamento</th>
+                            <th>Data Pagamento</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="invoices-table">
+                        <!-- Preenchido via JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Nova Nota Fiscal -->
+<div class="modal fade" id="newInvoiceModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Nova Nota Fiscal</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="newInvoiceForm">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="invoice_supplier">Fornecedor</label>
+                                <select class="form-control" id="invoice_supplier" required>
+                                    <!-- Preenchido via JavaScript -->
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="form-group">
+                                <label for="invoice_number">Número da Nota</label>
+                                <input type="text" class="form-control" id="invoice_number" required>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="invoice_date">Data de Emissão</label>
+                                <input type="date" class="form-control" id="invoice_date" required>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="invoice_payment_method">Forma de Pagamento</label>
+                                <select class="form-control" id="invoice_payment_method">
+                                    <option value="cash">Dinheiro</option>
+                                    <option value="credit">Cartão de Crédito</option>
+                                    <option value="debit">Cartão de Débito</option>
+                                    <option value="transfer">Transferência</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <div class="form-group">
+                                <label for="invoice_payment_date">Data de Pagamento</label>
+                                <input type="date" class="form-control" id="invoice_payment_date">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <h5 class="mt-4">Itens da Nota</h5>
+                    <div id="invoiceItems">
+                        <!-- Template para item -->
+                        <div class="row invoice-item mb-2">
+                            <div class="col-md-6">
+                                <select class="form-control product-select" required>
+                                    <option value="">Selecione um produto</option>
+                                    <!-- Preenchido via JavaScript -->
+                                </select>
+                            </div>
+                            <div class="col-md-2">
+                                <input type="number" class="form-control quantity" placeholder="Qtd" required>
+                            </div>
+                            <div class="col-md-2">
+                                <input type="number" class="form-control price" placeholder="Preço" required>
+                            </div>
+                            <div class="col-md-2">
+                                <button type="button" class="btn btn-danger" onclick="removeInvoiceItem(this)">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <button type="button" class="btn btn-info mt-2" onclick="addInvoiceItem()">
+                        <i class="bi bi-plus"></i> Adicionar Item
+                    </button>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="saveNewInvoice()">Salvar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function loadSuppliers() {
+    $.get('/api/suppliers', function(response) {
+        if (response.success) {
+            const suppliers = response.data;
+            const supplierSelect = $('#supplier');
+            const modalSupplierSelect = $('#invoice_supplier');
+            
+            suppliers.forEach(supplier => {
+                supplierSelect.append(`<option value="${supplier.id}">${supplier.name}</option>`);
+                modalSupplierSelect.append(`<option value="${supplier.id}">${supplier.name}</option>`);
+            });
+        }
+    });
+}
+
+function loadProducts() {
+    $.get('/api/products', function(response) {
+        if (response.success) {
+            window.products = response.data;
+            updateProductSelects();
+        }
+    });
+}
+
+function updateProductSelects() {
+    const productSelect = $('.product-select:last');
+    productSelect.empty();
+    productSelect.append('<option value="">Selecione um produto</option>');
+    window.products.forEach(product => {
+        productSelect.append(`<option value="${product.id}">${product.name}</option>`);
+    });
+}
+
+function filterInvoices() {
+    const filters = {
+        supplier_id: $('#supplier').val(),
+        start_date: $('#start_date').val(),
+        end_date: $('#end_date').val(),
+        status: $('#status').val()
+    };
+
+    $.get('/api/invoices', filters, function(response) {
+        if (response.success) {
+            const invoices = response.data;
+            const tbody = $('#invoices-table');
+            tbody.empty();
+
+            invoices.forEach(invoice => {
+                const row = `
+                    <tr>
+                        <td>${invoice.number}</td>
+                        <td>${invoice.supplier.name}</td>
+                        <td>${new Date(invoice.date).toLocaleDateString()}</td>
+                        <td>R$ ${parseFloat(invoice.total).toFixed(2)}</td>
+                        <td>${formatPaymentMethod(invoice.payment_method)}</td>
+                        <td>${invoice.payment_date ? new Date(invoice.payment_date).toLocaleDateString() : '-'}</td>
+                        <td>${formatStatus(invoice.status)}</td>
+                        <td>
+                            <div class="btn-group">
+                                <button class="btn btn-sm btn-success" onclick="markAsPaid(${invoice.id})" ${invoice.status !== 'pending' ? 'disabled' : ''}>
+                                    <i class="bi bi-check-circle"></i>
+                                </button>
+                                <button class="btn btn-sm btn-danger" onclick="cancelInvoice(${invoice.id})" ${invoice.status !== 'pending' ? 'disabled' : ''}>
+                                    <i class="bi bi-x-circle"></i>
+                                </button>
+                            </div>
+                        </td>
+                    </tr>
+                `;
+                tbody.append(row);
+            });
+        }
+    });
+}
+
+function clearFilters() {
+    $('#supplier').val('');
+    $('#start_date').val('');
+    $('#end_date').val('');
+    $('#status').val('');
+    filterInvoices();
+}
+
+function formatPaymentMethod(method) {
+    const methods = {
+        'cash': 'Dinheiro',
+        'credit': 'Cartão de Crédito',
+        'debit': 'Cartão de Débito',
+        'transfer': 'Transferência'
+    };
+    return methods[method] || method;
+}
+
+function formatStatus(status) {
+    return `<span class="badge ${status === 'paid' ? 'bg-success' : status === 'canceled' ? 'bg-danger' : 'bg-warning'}">
+        ${status === 'paid' ? 'Paga' : status === 'canceled' ? 'Cancelada' : 'Pendente'}
+    </span>`;
+}
+
+function showNewInvoiceModal() {
+    $('#newInvoiceModal').modal('show');
+    $('#invoiceItems').empty();
+    addInvoiceItem();
+}
+
+function addInvoiceItem() {
+    const itemRow = `
+        <div class="row mb-2 invoice-item">
+            <div class="col-md-6">
+                <select class="form-control product-select" required>
+                    <option value="">Selecione um produto</option>
+                </select>
+            </div>
+            <div class="col-md-2">
+                <input type="number" class="form-control quantity" placeholder="Qtd" required>
+            </div>
+            <div class="col-md-2">
+                <input type="number" class="form-control price" placeholder="Preço" required>
+            </div>
+            <div class="col-md-2">
+                <button type="button" class="btn btn-danger" onclick="removeInvoiceItem(this)">
+                    <i class="bi bi-trash"></i>
+                </button>
+            </div>
+        </div>
+    `;
+    $('#invoiceItems').append(itemRow);
+    updateProductSelects();
+}
+
+function removeInvoiceItem(button) {
+    $(button).closest('.invoice-item').remove();
+}
+
+function saveNewInvoice() {
+    const items = [];
+    let hasError = false;
+
+    $('.invoice-item').each(function() {
+        const productId = $(this).find('.product-select').val();
+        const quantity = $(this).find('.quantity').val();
+        const price = $(this).find('.price').val();
+
+        if (!productId || !quantity || !price) {
+            hasError = true;
+            return false;
+        }
+
+        items.push({
+            product_id: productId,
+            quantity: parseFloat(quantity),
+            unit_cost: parseFloat(price)
+        });
+    });
+
+    if (hasError) {
+        alert('Por favor, preencha todos os campos dos itens');
+        return;
+    }
+
+    const data = {
+        supplier_id: $('#invoice_supplier').val(),
+        number: $('#invoice_number').val(),
+        date: $('#invoice_date').val(),
+        payment_method: $('#invoice_payment_method').val(),
+        items: items
+    };
+
+    $.ajax({
+        url: '/api/invoices',
+        method: 'POST',
+        contentType: 'application/json',
+        data: JSON.stringify(data),
+        success: function(response) {
+            if (response.success) {
+                $('#newInvoiceModal').modal('hide');
+                filterInvoices();
+            } else {
+                alert('Erro ao salvar nota fiscal: ' + response.error);
+            }
+        },
+        error: function(xhr) {
+            alert('Erro ao salvar nota fiscal: ' + xhr.responseText);
+        }
+    });
+}
+
+function markAsPaid(id) {
+    if (confirm('Confirma o pagamento desta nota fiscal?')) {
+        $.ajax({
+            url: `/api/invoices/${id}/pay`,
+            method: 'POST',
+            success: function(response) {
+                if (response.success) {
+                    filterInvoices();
+                } else {
+                    alert('Erro ao marcar nota fiscal como paga: ' + response.error);
+                }
+            },
+            error: function(xhr) {
+                alert('Erro ao marcar nota fiscal como paga: ' + xhr.responseText);
+            }
+        });
+    }
+}
+
+function cancelInvoice(id) {
+    if (confirm('Tem certeza que deseja cancelar esta nota fiscal?')) {
+        $.ajax({
+            url: `/api/invoices/${id}/cancel`,
+            method: 'POST',
+            success: function(response) {
+                if (response.success) {
+                    filterInvoices();
+                } else {
+                    alert('Erro ao cancelar nota fiscal: ' + response.error);
+                }
+            },
+            error: function(xhr) {
+                alert('Erro ao cancelar nota fiscal: ' + xhr.responseText);
+            }
+        });
+    }
+}
+
+// Inicialização
+$(document).ready(function() {
+    loadSuppliers();
+    loadProducts();
+    filterInvoices();
+});
+</script>
+{% endblock %}

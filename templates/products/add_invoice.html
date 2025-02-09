@@ -1,0 +1,282 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Adicionar Nota Fiscal</h2>
+    
+    <form id="invoiceForm" method="POST">
+        <div class="row mb-3">
+            <div class="col-md-3">
+                <label for="invoice_number" class="form-label">Número da NF</label>
+                <input type="text" class="form-control" id="invoice_number" name="invoice_number" required>
+            </div>
+            <div class="col-md-3">
+                <label for="supplier_id" class="form-label">Fornecedor</label>
+                <div class="input-group">
+                    <select class="form-select" id="supplier_id" name="supplier_id" required>
+                        <option value="">Selecione um fornecedor</option>
+                        {% for supplier in suppliers %}
+                        <option value="{{ supplier.id }}">{{ supplier.name }}</option>
+                        {% endfor %}
+                    </select>
+                    <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalNewSupplier">
+                        <i class="bi bi-plus"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="col-md-3">
+                <label for="invoice_date" class="form-label">Data da NF</label>
+                <input type="date" class="form-control" id="invoice_date" name="invoice_date" required>
+            </div>
+            <div class="col-md-3">
+                <label for="payment_date" class="form-label">Data de Vencimento</label>
+                <input type="date" class="form-control" id="payment_date" name="payment_date" required>
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-md-4">
+                <label for="payment_method" class="form-label">Forma de Pagamento</label>
+                <select class="form-select" id="payment_method" name="payment_method" required>
+                    <option value="boleto">Boleto</option>
+                    <option value="pix">PIX</option>
+                    <option value="cartao">Cartão</option>
+                    <option value="dinheiro">Dinheiro</option>
+                    <option value="transferencia">Transferência</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label for="status" class="form-label">Status do Pagamento</label>
+                <select class="form-select" id="status" name="status" required>
+                    <option value="pending">Pendente</option>
+                    <option value="paid">Pago</option>
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label for="total" class="form-label">Valor Total da NF</label>
+                <input type="number" class="form-control" id="total" name="total" step="0.01" required readonly>
+            </div>
+        </div>
+
+        <div class="card mb-3">
+            <div class="card-header">
+                <div class="d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Produtos</h5>
+                    <button type="button" class="btn btn-primary btn-sm" onclick="addProductRow()">
+                        <i class="bi bi-plus"></i> Adicionar Produto
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table" id="productsTable">
+                        <thead>
+                            <tr>
+                                <th style="width: 40%">Produto</th>
+                                <th style="width: 20%">Quantidade</th>
+                                <th style="width: 20%">Preço</th>
+                                <th style="width: 15%">Subtotal</th>
+                                <th style="width: 5%">Ações</th>
+                            </tr>
+                        </thead>
+                        <tbody id="productRows">
+                            <!-- Linhas de produtos serão adicionadas aqui -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <div class="row mb-3">
+            <div class="col-12">
+                <label for="notes" class="form-label">Observações</label>
+                <textarea class="form-control" id="notes" name="notes" rows="3"></textarea>
+            </div>
+        </div>
+
+        <div class="d-flex justify-content-end gap-2">
+            <a href="{{ url_for('products.list_products') }}" class="btn btn-secondary">Cancelar</a>
+            <button type="submit" class="btn btn-primary">Salvar NF</button>
+        </div>
+    </form>
+</div>
+
+<!-- Template para nova linha de produto -->
+<template id="productRowTemplate">
+    <tr>
+        <td>
+            <div class="input-group">
+                <input type="text" class="form-control product-search" placeholder="Buscar produto...">
+                <input type="hidden" class="product-id" name="product_ids[]">
+                <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalNewProduct">
+                    <i class="bi bi-plus"></i>
+                </button>
+            </div>
+        </td>
+        <td>
+            <input type="number" class="form-control quantity" name="quantities[]" value="1" min="0.001" step="0.001" required>
+        </td>
+        <td>
+            <input type="number" class="form-control price" name="prices[]" value="0.00" min="0.01" step="0.01" required>
+        </td>
+        <td>
+            <input type="number" class="form-control subtotal" readonly>
+        </td>
+        <td>
+            <button type="button" class="btn btn-danger btn-sm" onclick="removeProductRow(this)">
+                <i class="bi bi-trash"></i>
+            </button>
+        </td>
+    </tr>
+</template>
+
+<!-- Modal Novo Fornecedor -->
+<div class="modal fade" id="modalNewSupplier" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Novo Fornecedor</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formNewSupplier">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Nome</label>
+                            <input type="text" class="form-control" id="supplierName" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">CNPJ</label>
+                            <input type="text" class="form-control" id="supplierCnpj">
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-control" id="supplierEmail">
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Telefone</label>
+                            <input type="text" class="form-control" id="supplierPhone">
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-12">
+                            <label class="form-label">Endereço</label>
+                            <input type="text" class="form-control" id="supplierAddress">
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Cidade</label>
+                            <input type="text" class="form-control" id="supplierCity">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Estado</label>
+                            <input type="text" class="form-control" id="supplierState" maxlength="2">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">CEP</label>
+                            <input type="text" class="form-control" id="supplierZipCode">
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="saveNewSupplier()">Salvar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Novo Produto -->
+<div class="modal fade" id="modalNewProduct" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Novo Produto</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formNewProduct">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Código</label>
+                            <input type="text" class="form-control" id="productCode" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label">Nome</label>
+                            <input type="text" class="form-control" id="productName" required>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Preço de Custo</label>
+                            <input type="number" class="form-control" id="productCostPrice" step="0.01" min="0" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Markup (%)</label>
+                            <input type="number" class="form-control" id="productMarkup" step="0.01" min="0" required value="0">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Preço de Venda</label>
+                            <input type="number" class="form-control" id="productSellingPrice" step="0.01" min="0" readonly>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label class="form-label">Estoque Mínimo</label>
+                            <input type="number" class="form-control" id="productMinStock" step="1" min="0" required value="0">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Estoque Máximo</label>
+                            <input type="number" class="form-control" id="productMaxStock" step="1" min="0" required value="0">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Unidade de Medida</label>
+                            <select class="form-select" id="productUnit" required>
+                                <option value="un">Unidade</option>
+                                <option value="kg">Quilograma</option>
+                                <option value="g">Grama</option>
+                                <option value="l">Litro</option>
+                                <option value="ml">Mililitro</option>
+                                <option value="m">Metro</option>
+                                <option value="cm">Centímetro</option>
+                                <option value="m2">Metro Quadrado</option>
+                                <option value="m3">Metro Cúbico</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <label class="form-label">Descrição</label>
+                            <textarea class="form-control" id="productDescription" rows="3"></textarea>
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-12">
+                            <label class="form-label">Categoria</label>
+                            <select class="form-select" id="productCategory">
+                                <option value="">Selecione uma categoria</option>
+                                {% for category in categories %}
+                                <option value="{{ category.id }}">{{ category.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="saveNewProduct()">Salvar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/invoice.js') }}"></script>
+{% endblock %}

@@ -1,0 +1,288 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">Fornecedores</h1>
+        <button type="button" class="btn btn-primary" onclick="openCreateModal()">
+            <i class="bi bi-plus"></i> Novo Fornecedor
+        </button>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Nome</th>
+                            <th>CNPJ</th>
+                            <th>Email</th>
+                            <th>Telefone</th>
+                            <th>Cidade/UF</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for supplier in suppliers %}
+                        <tr>
+                            <td>{{ supplier.name }}</td>
+                            <td>{{ supplier.cnpj }}</td>
+                            <td>{{ supplier.email }}</td>
+                            <td>{{ supplier.phone }}</td>
+                            <td>{{ supplier.city }}/{{ supplier.state }}</td>
+                            <td>
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="viewSupplier({{ supplier.id }})">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="editSupplier({{ supplier.id }})">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteSupplier({{ supplier.id }})">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Criação/Edição -->
+<div class="modal fade" id="supplierModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Novo Fornecedor</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="supplierForm">
+                    <input type="hidden" id="supplierId">
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="name" class="form-label">Nome</label>
+                            <input type="text" class="form-control" id="name" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="cnpj" class="form-label">CNPJ</label>
+                            <input type="text" class="form-control" id="cnpj">
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="email" class="form-label">Email</label>
+                            <input type="email" class="form-control" id="email">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="phone" class="form-label">Telefone</label>
+                            <input type="text" class="form-control" id="phone">
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="contact" class="form-label">Contato</label>
+                            <input type="text" class="form-control" id="contact">
+                        </div>
+                        <div class="col-md-6">
+                            <label for="address" class="form-label">Endereço</label>
+                            <input type="text" class="form-control" id="address">
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="city" class="form-label">Cidade</label>
+                            <input type="text" class="form-control" id="city">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="state" class="form-label">UF</label>
+                            <input type="text" class="form-control" id="state" maxlength="2">
+                        </div>
+                        <div class="col-md-3">
+                            <label for="zip_code" class="form-label">CEP</label>
+                            <input type="text" class="form-control" id="zip_code">
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Observações</label>
+                        <textarea class="form-control" id="notes" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="saveSupplier()">Salvar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Visualização -->
+<div class="modal fade" id="viewSupplierModal" tabindex="-1">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Detalhes do Fornecedor</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <h6>Informações Gerais</h6>
+                        <p class="mb-1">Nome: <span id="viewName"></span></p>
+                        <p class="mb-1">CNPJ: <span id="viewCnpj"></span></p>
+                        <p class="mb-1">Email: <span id="viewEmail"></span></p>
+                        <p class="mb-1">Telefone: <span id="viewPhone"></span></p>
+                        <p class="mb-1">Contato: <span id="viewContact"></span></p>
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Endereço</h6>
+                        <p class="mb-1">Endereço: <span id="viewAddress"></span></p>
+                        <p class="mb-1">Cidade: <span id="viewCity"></span></p>
+                        <p class="mb-1">UF: <span id="viewState"></span></p>
+                        <p class="mb-1">CEP: <span id="viewZipCode"></span></p>
+                    </div>
+                </div>
+                <div class="mb-3">
+                    <h6>Observações</h6>
+                    <p id="viewNotes"></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let supplierModal;
+let viewSupplierModal;
+
+document.addEventListener('DOMContentLoaded', function() {
+    supplierModal = new bootstrap.Modal(document.getElementById('supplierModal'));
+    viewSupplierModal = new bootstrap.Modal(document.getElementById('viewSupplierModal'));
+});
+
+function openCreateModal() {
+    document.getElementById('supplierForm').reset();
+    document.getElementById('supplierId').value = '';
+    document.querySelector('#supplierModal .modal-title').textContent = 'Novo Fornecedor';
+    supplierModal.show();
+}
+
+function viewSupplier(id) {
+    fetch(`/api/suppliers/${id}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const supplier = data.data;
+                document.getElementById('viewName').textContent = supplier.name;
+                document.getElementById('viewCnpj').textContent = supplier.cnpj || '-';
+                document.getElementById('viewEmail').textContent = supplier.email || '-';
+                document.getElementById('viewPhone').textContent = supplier.phone || '-';
+                document.getElementById('viewContact').textContent = supplier.contact || '-';
+                document.getElementById('viewAddress').textContent = supplier.address || '-';
+                document.getElementById('viewCity').textContent = supplier.city || '-';
+                document.getElementById('viewState').textContent = supplier.state || '-';
+                document.getElementById('viewZipCode').textContent = supplier.zip_code || '-';
+                document.getElementById('viewNotes').textContent = supplier.notes || '-';
+                viewSupplierModal.show();
+            } else {
+                alert('Erro ao carregar fornecedor: ' + data.error);
+            }
+        })
+        .catch(error => {
+            alert('Erro ao carregar fornecedor: ' + error);
+        });
+}
+
+function editSupplier(id) {
+    fetch(`/api/suppliers/${id}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const supplier = data.data;
+                document.getElementById('supplierId').value = supplier.id;
+                document.getElementById('name').value = supplier.name;
+                document.getElementById('cnpj').value = supplier.cnpj || '';
+                document.getElementById('email').value = supplier.email || '';
+                document.getElementById('phone').value = supplier.phone || '';
+                document.getElementById('contact').value = supplier.contact || '';
+                document.getElementById('address').value = supplier.address || '';
+                document.getElementById('city').value = supplier.city || '';
+                document.getElementById('state').value = supplier.state || '';
+                document.getElementById('zip_code').value = supplier.zip_code || '';
+                document.getElementById('notes').value = supplier.notes || '';
+                
+                document.querySelector('#supplierModal .modal-title').textContent = 'Editar Fornecedor';
+                supplierModal.show();
+            } else {
+                alert('Erro ao carregar fornecedor: ' + data.error);
+            }
+        })
+        .catch(error => {
+            alert('Erro ao carregar fornecedor: ' + error);
+        });
+}
+
+function saveSupplier() {
+    const id = document.getElementById('supplierId').value;
+    const data = {
+        name: document.getElementById('name').value,
+        cnpj: document.getElementById('cnpj').value,
+        email: document.getElementById('email').value,
+        phone: document.getElementById('phone').value,
+        contact: document.getElementById('contact').value,
+        address: document.getElementById('address').value,
+        city: document.getElementById('city').value,
+        state: document.getElementById('state').value,
+        zip_code: document.getElementById('zip_code').value,
+        notes: document.getElementById('notes').value
+    };
+    
+    const method = id ? 'PUT' : 'POST';
+    const url = id ? `/api/suppliers/${id}` : '/api/suppliers';
+    
+    fetch(url, {
+        method: method,
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(id ? 'Fornecedor atualizado com sucesso!' : 'Fornecedor criado com sucesso!');
+            location.reload();
+        } else {
+            alert('Erro ao salvar fornecedor: ' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('Erro ao salvar fornecedor: ' + error);
+    });
+}
+
+function deleteSupplier(id) {
+    if (confirm('Tem certeza que deseja excluir este fornecedor?')) {
+        fetch(`/api/suppliers/${id}`, { method: 'DELETE' })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Fornecedor excluído com sucesso!');
+                    location.reload();
+                } else {
+                    alert('Erro ao excluir fornecedor: ' + data.error);
+                }
+            })
+            .catch(error => {
+                alert('Erro ao excluir fornecedor: ' + error);
+            });
+    }
+}
+</script>
+{% endblock %}

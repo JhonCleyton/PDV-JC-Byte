@@ -1,0 +1,258 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">Usuários</h1>
+        <button type="button" class="btn btn-primary" onclick="openCreateModal()">
+            <i class="bi bi-plus"></i> Novo Usuário
+        </button>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Nome</th>
+                            <th>Username</th>
+                            <th>Email</th>
+                            <th>Função</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for user in users %}
+                        <tr>
+                            <td>{{ user.name }}</td>
+                            <td>{{ user.username }}</td>
+                            <td>{{ user.email }}</td>
+                            <td>{{ user.role }}</td>
+                            <td>
+                                <span class="badge {% if user.status == 'active' %}bg-success{% else %}bg-danger{% endif %}">
+                                    {{ user.status }}
+                                </span>
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="viewUser({{ user.id }})">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="editUser({{ user.id }})">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteUser({{ user.id }})">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Criação/Edição -->
+<div class="modal fade" id="userModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Novo Usuário</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="userForm">
+                    <input type="hidden" id="userId">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Nome</label>
+                        <input type="text" class="form-control" id="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Username</label>
+                        <input type="text" class="form-control" id="username" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Senha</label>
+                        <input type="password" class="form-control" id="password">
+                        <small class="text-muted">Deixe em branco para manter a senha atual ao editar</small>
+                    </div>
+                    <div class="mb-3">
+                        <label for="role" class="form-label">Função</label>
+                        <select class="form-select" id="role" required>
+                            <option value="cashier">Caixa</option>
+                            <option value="supervisor">Supervisor</option>
+                            <option value="manager">Gerente</option>
+                            <option value="admin">Administrador</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="status" class="form-label">Status</label>
+                        <select class="form-select" id="status" required>
+                            <option value="active">Ativo</option>
+                            <option value="inactive">Inativo</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="saveUser()">Salvar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Visualização -->
+<div class="modal fade" id="viewUserModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Detalhes do Usuário</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <h6>Informações Gerais</h6>
+                    <p class="mb-1">Nome: <span id="viewName"></span></p>
+                    <p class="mb-1">Username: <span id="viewUsername"></span></p>
+                    <p class="mb-1">Email: <span id="viewEmail"></span></p>
+                    <p class="mb-1">Função: <span id="viewRole"></span></p>
+                    <p class="mb-1">Status: <span id="viewStatus"></span></p>
+                    <p class="mb-1">Criado em: <span id="viewCreatedAt"></span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let userModal;
+let viewUserModal;
+
+document.addEventListener('DOMContentLoaded', function() {
+    userModal = new bootstrap.Modal(document.getElementById('userModal'));
+    viewUserModal = new bootstrap.Modal(document.getElementById('viewUserModal'));
+});
+
+function openCreateModal() {
+    document.getElementById('userForm').reset();
+    document.getElementById('userId').value = '';
+    document.getElementById('password').required = true;
+    document.querySelector('#userModal .modal-title').textContent = 'Novo Usuário';
+    userModal.show();
+}
+
+function viewUser(id) {
+    fetch(`/api/users/${id}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const user = data.data;
+                document.getElementById('viewName').textContent = user.name;
+                document.getElementById('viewUsername').textContent = user.username;
+                document.getElementById('viewEmail').textContent = user.email;
+                document.getElementById('viewRole').textContent = user.role;
+                document.getElementById('viewStatus').textContent = user.status;
+                document.getElementById('viewCreatedAt').textContent = new Date(user.created_at).toLocaleString();
+                viewUserModal.show();
+            } else {
+                alert('Erro ao carregar usuário: ' + data.error);
+            }
+        })
+        .catch(error => {
+            alert('Erro ao carregar usuário: ' + error);
+        });
+}
+
+function editUser(id) {
+    fetch(`/api/users/${id}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const user = data.data;
+                document.getElementById('userId').value = user.id;
+                document.getElementById('name').value = user.name;
+                document.getElementById('username').value = user.username;
+                document.getElementById('email').value = user.email;
+                document.getElementById('role').value = user.role;
+                document.getElementById('status').value = user.status;
+                document.getElementById('password').required = false;
+                
+                document.querySelector('#userModal .modal-title').textContent = 'Editar Usuário';
+                userModal.show();
+            } else {
+                alert('Erro ao carregar usuário: ' + data.error);
+            }
+        })
+        .catch(error => {
+            alert('Erro ao carregar usuário: ' + error);
+        });
+}
+
+function saveUser() {
+    const id = document.getElementById('userId').value;
+    const data = {
+        name: document.getElementById('name').value,
+        username: document.getElementById('username').value,
+        email: document.getElementById('email').value,
+        role: document.getElementById('role').value,
+        status: document.getElementById('status').value
+    };
+    
+    const password = document.getElementById('password').value;
+    if (password) {
+        data.password = password;
+    }
+    
+    const method = id ? 'PUT' : 'POST';
+    const url = id ? `/api/users/${id}` : '/api/users';
+    
+    fetch(url, {
+        method: method,
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(id ? 'Usuário atualizado com sucesso!' : 'Usuário criado com sucesso!');
+            location.reload();
+        } else {
+            alert('Erro ao salvar usuário: ' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('Erro ao salvar usuário: ' + error);
+    });
+}
+
+function deleteUser(id) {
+    if (confirm('Tem certeza que deseja excluir este usuário?')) {
+        fetch(`/api/users/${id}`, { method: 'DELETE' })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Usuário excluído com sucesso!');
+                    location.reload();
+                } else {
+                    alert('Erro ao excluir usuário: ' + data.error);
+                }
+            })
+            .catch(error => {
+                alert('Erro ao excluir usuário: ' + error);
+            });
+    }
+}
+</script>
+{% endblock %}

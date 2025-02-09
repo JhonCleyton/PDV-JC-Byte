@@ -1,0 +1,218 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row">
+        <!-- Sidebar de configurações -->
+        <div class="col-md-3">
+            <div class="list-group">
+                <a href="#company" class="list-group-item list-group-item-action active" data-bs-toggle="list">
+                    <i class="bi bi-building"></i> Dados da Empresa
+                </a>
+                <a href="#receipt" class="list-group-item list-group-item-action" data-bs-toggle="list">
+                    <i class="bi bi-receipt"></i> Configuração do Cupom
+                </a>
+                <a href="#users" class="list-group-item list-group-item-action" data-bs-toggle="list">
+                    <i class="bi bi-people"></i> Usuários
+                </a>
+                <a href="#general" class="list-group-item list-group-item-action" data-bs-toggle="list">
+                    <i class="bi bi-gear"></i> Geral
+                </a>
+            </div>
+        </div>
+
+        <!-- Conteúdo -->
+        <div class="col-md-9">
+            <div class="tab-content">
+                <!-- Dados da Empresa -->
+                <div class="tab-pane fade show active" id="company">
+                    <div class="card">
+                        <div class="card-body">
+                            <h2 class="card-title">Dados da Empresa</h2>
+                            <form id="company-form">
+                                <div class="row mb-3">
+                                    <div class="col-md-8">
+                                        <label for="company_name" class="form-label">Nome da Empresa</label>
+                                        <input type="text" class="form-control" id="company_name" required>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="company_cnpj" class="form-label">CNPJ</label>
+                                        <input type="text" class="form-control" id="company_cnpj" required>
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <label for="company_ie" class="form-label">Inscrição Estadual</label>
+                                        <input type="text" class="form-control" id="company_ie">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="company_phone" class="form-label">Telefone</label>
+                                        <input type="text" class="form-control" id="company_phone">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="company_email" class="form-label">Email</label>
+                                        <input type="email" class="form-control" id="company_email">
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="company_address" class="form-label">Endereço</label>
+                                        <input type="text" class="form-control" id="company_address">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label for="company_number" class="form-label">Número</label>
+                                        <input type="text" class="form-control" id="company_number">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="company_neighborhood" class="form-label">Bairro</label>
+                                        <input type="text" class="form-control" id="company_neighborhood">
+                                    </div>
+                                </div>
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="company_city" class="form-label">Cidade</label>
+                                        <input type="text" class="form-control" id="company_city">
+                                    </div>
+                                    <div class="col-md-2">
+                                        <label for="company_state" class="form-label">Estado</label>
+                                        <input type="text" class="form-control" id="company_state" maxlength="2">
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="company_zip" class="form-label">CEP</label>
+                                        <input type="text" class="form-control" id="company_zip">
+                                    </div>
+                                </div>
+                                <div class="text-end">
+                                    <button type="submit" class="btn btn-primary">Salvar</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Configuração do Cupom -->
+                <div class="tab-pane fade" id="receipt">
+                    <div class="card">
+                        <div class="card-body">
+                            <h2 class="card-title">Configuração do Cupom</h2>
+                            <form id="receipt-form">
+                                <div class="mb-3">
+                                    <label for="printer_name" class="form-label">Nome da Impressora</label>
+                                    <select class="form-select" id="printer_name" required>
+                                        <!-- Preenchido via JavaScript -->
+                                    </select>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="print_header" class="form-label">Cabeçalho do Cupom</label>
+                                    <textarea class="form-control" id="print_header" rows="5"></textarea>
+                                    <small class="text-muted">Use {empresa} para incluir o nome da empresa, {endereco} para o endereço, etc.</small>
+                                </div>
+                                <div class="mb-3">
+                                    <label for="print_footer" class="form-label">Rodapé do Cupom</label>
+                                    <textarea class="form-control" id="print_footer" rows="3"></textarea>
+                                </div>
+                                <div class="mb-3 form-check">
+                                    <input type="checkbox" class="form-check-input" id="auto_print" checked>
+                                    <label class="form-check-label" for="auto_print">Imprimir automaticamente após finalizar venda</label>
+                                </div>
+                                <div class="text-end">
+                                    <button type="button" class="btn btn-secondary me-2" onclick="testarImpressao()">Testar Impressão</button>
+                                    <button type="submit" class="btn btn-primary">Salvar</button>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Gerenciamento de Usuários -->
+                <div class="tab-pane fade" id="users">
+                    <div class="d-flex justify-content-between mb-3">
+                        <h2>Gerenciamento de Usuários</h2>
+                        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#userModal">
+                            <i class="bi bi-plus"></i> Novo Usuário
+                        </button>
+                    </div>
+
+                    <!-- Tabela de usuários -->
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Nome</th>
+                                    <th>Usuário</th>
+                                    <th>Função</th>
+                                    <th>Status</th>
+                                    <th>Ações</th>
+                                </tr>
+                            </thead>
+                            <tbody id="users-table">
+                                <!-- Preenchido via JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Configurações Gerais -->
+                <div class="tab-pane fade" id="general">
+                    <h2>Configurações Gerais</h2>
+                    <!-- Adicione outras configurações aqui -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Usuário -->
+<div class="modal fade" id="userModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Usuário</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="user-form">
+                    <input type="hidden" id="user-id">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Nome</label>
+                        <input type="text" class="form-control" id="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Usuário</label>
+                        <input type="text" class="form-control" id="username" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Senha</label>
+                        <input type="password" class="form-control" id="password">
+                        <small class="text-muted">Deixe em branco para manter a senha atual</small>
+                    </div>
+                    <div class="mb-3">
+                        <label for="role" class="form-label">Função</label>
+                        <select class="form-select" id="role" required>
+                            <option value="admin">Administrador</option>
+                            <option value="manager">Gerente</option>
+                            <option value="supervisor">Supervisor</option>
+                            <option value="cashier">Caixa</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="status" class="form-label">Status</label>
+                        <select class="form-select" id="status" required>
+                            <option value="active">Ativo</option>
+                            <option value="inactive">Inativo</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="saveUser()">Salvar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/settings.js') }}"></script>
+{% endblock %}

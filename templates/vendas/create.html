@@ -1,0 +1,359 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">Nova Venda</h1>
+        <a href="{{ url_for('vendas.list_sales') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Voltar
+        </a>
+    </div>
+
+    <div class="row">
+        <!-- Formulário de Venda -->
+        <div class="col-md-8">
+            <div class="card mb-4">
+                <div class="card-body">
+                    <div class="row mb-3">
+                        <div class="col-md-4">
+                            <label for="registration" class="form-label">Matrícula do Cliente</label>
+                            <div class="input-group">
+                                <input type="text" class="form-control" id="registration" placeholder="Digite a matrícula">
+                                <button class="btn btn-outline-secondary" type="button" id="searchCustomerBtn">
+                                    <i class="bi bi-search"></i>
+                                </button>
+                            </div>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="customer" class="form-label">Cliente</label>
+                            <select class="form-select" id="customer">
+                                <option value="">Selecione um cliente</option>
+                                {% for customer in customers %}
+                                <option value="{{ customer.id }}">{{ customer.name }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="payment_method" class="form-label">Forma de Pagamento</label>
+                            <select class="form-select" id="payment_method" required>
+                                <option value="dinheiro">Dinheiro</option>
+                                <option value="cartao_credito">Cartão de Crédito</option>
+                                <option value="cartao_debito">Cartão de Débito</option>
+                                <option value="pix">PIX</option>
+                                <option value="crediario">Crediário</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="mb-3" id="creditInfo" style="display: none;">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <label class="form-label">Limite de Crédito</label>
+                                <p class="form-control-static">R$ <span id="creditLimit">0.00</span></p>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Dívida Atual</label>
+                                <p class="form-control-static">R$ <span id="currentDebt">0.00</span></p>
+                            </div>
+                            <div class="col-md-4">
+                                <label class="form-label">Crédito Disponível</label>
+                                <p class="form-control-static">R$ <span id="availableCredit">0.00</span></p>
+                            </div>
+                        </div>
+                        <div class="row mt-3">
+                            <div class="col-md-4">
+                                <label for="due_date" class="form-label">Data de Vencimento</label>
+                                <input type="date" class="form-control" id="due_date" required>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Observações</label>
+                        <textarea class="form-control" id="notes" rows="2"></textarea>
+                    </div>
+
+                    <h5 class="mb-3">Itens da Venda</h5>
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="itemsTable">
+                            <thead>
+                                <tr>
+                                    <th>Produto</th>
+                                    <th>Preço</th>
+                                    <th>Quantidade</th>
+                                    <th>Subtotal</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody></tbody>
+                            <tfoot>
+                                <tr>
+                                    <td colspan="5">
+                                        <div class="input-group">
+                                            <input type="number" class="form-control" id="quantity" 
+                                                   min="0.001" step="0.001" placeholder="Quantidade">
+                                            <button type="button" class="btn btn-outline-primary" id="addItemButton">
+                                                <i class="bi bi-plus"></i> Adicionar Item
+                                            </button>
+                                        </div>
+                                    </td>
+                                </tr>
+                            </tfoot>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">Total: R$ <span id="total">0.00</span></h4>
+                        <button type="button" class="btn btn-primary" id="saveSaleButton">
+                            <i class="bi bi-check-lg"></i> Finalizar Venda
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lista de Produtos -->
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title mb-3">Produtos Disponíveis</h5>
+                    <div class="mb-3">
+                        <input type="text" class="form-control" id="searchProduct" placeholder="Buscar produto...">
+                    </div>
+                    <div class="list-group" id="productsList">
+                        {% for product in products %}
+                        <button type="button" class="list-group-item list-group-item-action product-item" 
+                                data-id="{{ product.id }}" 
+                                data-name="{{ product.name }}"
+                                data-price="{{ product.selling_price }}"
+                                data-stock="{{ product.stock }}"
+                                onclick="selectProduct(this)">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">{{ product.name }}</h6>
+                                <small>R$ {{ "%.2f"|format(product.selling_price) }}</small>
+                            </div>
+                            <small class="text-muted">Estoque: {{ product.stock }}</small>
+                        </button>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}
+
+{% block scripts %}
+<script>
+let selectedProduct = null;
+const items = [];
+
+function selectProduct(element) {
+    // Remove seleção anterior
+    document.querySelectorAll('.product-item').forEach(item => item.classList.remove('selected'));
+    
+    // Adiciona seleção ao item atual
+    element.classList.add('selected');
+    
+    // Atualiza produto selecionado
+    selectedProduct = {
+        id: element.dataset.id,
+        name: element.dataset.name,
+        price: parseFloat(element.dataset.price),
+        stock: parseFloat(element.dataset.stock)
+    };
+    
+    // Foca no campo de quantidade
+    document.getElementById('quantity').focus();
+}
+
+function addItem() {
+    if (!selectedProduct) {
+        alert('Por favor, selecione um produto primeiro');
+        return;
+    }
+
+    const quantity = parseFloat(document.getElementById('quantity').value);
+    if (!quantity || quantity <= 0) {
+        alert('Por favor, insira uma quantidade válida');
+        return;
+    }
+
+    const subtotal = selectedProduct.price * quantity;
+
+    items.push({
+        id: selectedProduct.id,
+        name: selectedProduct.name,
+        price: selectedProduct.price,
+        quantity: quantity,
+        subtotal: subtotal
+    });
+
+    const tbody = document.getElementById('itemsTable').getElementsByTagName('tbody')[0];
+    const row = tbody.insertRow();
+    row.innerHTML = `
+        <td>${selectedProduct.name}</td>
+        <td>R$ ${selectedProduct.price.toFixed(2)}</td>
+        <td>
+            <input type="number" class="form-control form-control-sm quantity-input" 
+                   value="${quantity}" min="0.001" step="0.001" style="width: 100px"
+                   onchange="updateQuantity(${items.length - 1}, this.value)">
+        </td>
+        <td>R$ ${subtotal.toFixed(2)}</td>
+        <td>
+            <button type="button" class="btn btn-sm btn-danger" onclick="removeItem(${items.length - 1}, this)">
+                <i class="bi bi-trash"></i>
+            </button>
+        </td>
+    `;
+
+    // Limpa a seleção e quantidade
+    selectedProduct = null;
+    document.getElementById('quantity').value = '';
+    document.querySelectorAll('.product-item').forEach(item => item.classList.remove('selected'));
+    
+    updateTotal();
+}
+
+function updateQuantity(index, quantity) {
+    quantity = parseFloat(quantity);
+    if (quantity <= 0) {
+        alert('A quantidade deve ser maior que zero');
+        return;
+    }
+
+    items[index].quantity = quantity;
+    items[index].subtotal = items[index].price * quantity;
+
+    const row = document.getElementById('itemsTable').getElementsByTagName('tbody')[0].rows[index];
+    row.cells[3].textContent = `R$ ${items[index].subtotal.toFixed(2)}`;
+
+    updateTotal();
+}
+
+function removeItem(index, button) {
+    items.splice(index, 1);
+    button.closest('tr').remove();
+    updateTotal();
+}
+
+function updateTotal() {
+    const total = items.reduce((sum, item) => sum + item.subtotal, 0);
+    document.getElementById('total').textContent = `R$ ${total.toFixed(2)}`;
+}
+
+// Função para buscar cliente por matrícula
+function searchCustomerByRegistration() {
+    const registration = document.getElementById('registration').value;
+    if (!registration) {
+        alert('Por favor, digite uma matrícula');
+        return;
+    }
+
+    fetch(`/api/clientes/busca/${registration}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const customer = data.data;
+                document.getElementById('customer').value = customer.id;
+                document.getElementById('creditLimit').textContent = customer.credit_limit.toFixed(2);
+                document.getElementById('currentDebt').textContent = customer.current_debt.toFixed(2);
+                document.getElementById('availableCredit').textContent = customer.available_credit.toFixed(2);
+            } else {
+                alert('Cliente não encontrado');
+            }
+        })
+        .catch(error => {
+            console.error('Erro ao buscar cliente:', error);
+            alert('Erro ao buscar cliente');
+        });
+}
+
+// Função para mostrar/ocultar informações de crédito
+function toggleCreditInfo() {
+    const paymentMethod = document.getElementById('payment_method').value;
+    const creditInfo = document.getElementById('creditInfo');
+    
+    if (paymentMethod === 'crediario') {
+        creditInfo.style.display = 'block';
+        document.getElementById('customer').required = true;
+        document.getElementById('due_date').required = true;
+    } else {
+        creditInfo.style.display = 'none';
+        document.getElementById('customer').required = false;
+        document.getElementById('due_date').required = false;
+    }
+}
+
+// Atualiza a função saveSale para incluir data de vencimento no crediário
+function saveSale() {
+    if (items.length === 0) {
+        alert('Adicione pelo menos um item à venda');
+        return;
+    }
+
+    const paymentMethod = document.getElementById('payment_method').value;
+    const data = {
+        customer_id: document.getElementById('customer').value || null,
+        payment_method: paymentMethod,
+        items: items.map(item => ({
+            product_id: item.id,
+            quantity: item.quantity
+        }))
+    };
+
+    if (paymentMethod === 'crediario') {
+        const dueDate = document.getElementById('due_date').value;
+        if (!dueDate) {
+            alert('Por favor, selecione uma data de vencimento');
+            return;
+        }
+        if (!data.customer_id) {
+            alert('Por favor, selecione um cliente');
+            return;
+        }
+        data.due_date = dueDate;
+    }
+
+    fetch('/api/vendas', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert('Venda salva com sucesso!');
+            window.location.href = '/vendas';
+        } else {
+            alert(data.error || 'Erro ao salvar venda');
+        }
+    })
+    .catch(error => {
+        console.error('Erro:', error);
+        alert('Erro ao salvar venda');
+    });
+}
+
+$(document).ready(function() {
+    $('#searchCustomerBtn').on('click', searchCustomerByRegistration);
+    $('#payment_method').on('change', toggleCreditInfo);
+    $('#addItemButton').on('click', addItem);
+    $('#saveSaleButton').on('click', saveSale);
+    
+    // Permite buscar cliente por matrícula pressionando Enter
+    $('#registration').on('keypress', function(e) {
+        if (e.which === 13) {
+            searchCustomerByRegistration();
+        }
+    });
+});
+</script>
+{% endblock %}

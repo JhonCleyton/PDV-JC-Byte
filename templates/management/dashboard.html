@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Cards de Resumo -->
+    <div class="row mb-4">
+        <!-- Receita do Mês -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Receita do Mês</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">R$ {{ "%.2f"|format(month_revenue) }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-calendar fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Lucro Estimado -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Lucro Estimado</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">R$ {{ "%.2f"|format(estimated_profit) }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-dollar-sign fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Crescimento -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Crescimento (vs. mês anterior)</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">{{ "%.1f"|format(growth) }}%</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-percent fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Média Diária -->
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Média de Vendas Diária</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">R$ {{ "%.2f"|format(avg_daily_sales) }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="fas fa-chart-line fa-2x text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Gráficos -->
+    <div class="row">
+        <!-- Gráfico de Vendas -->
+        <div class="col-xl-8 col-lg-7">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Vendas dos Últimos 12 Meses</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-area">
+                        <canvas id="salesChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Top Produtos -->
+        <div class="col-xl-4 col-lg-5">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Top 5 Produtos</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-pie">
+                        <canvas id="productsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Financeiro -->
+    <div class="row">
+        <!-- Contas a Receber -->
+        <div class="col-xl-6 col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Contas a Receber</h6>
+                </div>
+                <div class="card-body">
+                    <div class="progress mb-4">
+                        <div class="progress-bar bg-success" role="progressbar" style="width: {{ (received/total_receivables*100) if total_receivables > 0 else 0 }}%"></div>
+                    </div>
+                    <p>Total: R$ {{ "%.2f"|format(total_receivables) }}</p>
+                    <p>Recebido: R$ {{ "%.2f"|format(received) }}</p>
+                    <p>Pendente: R$ {{ "%.2f"|format(pending_receivables) }}</p>
+                    <p class="text-danger">Vencido: R$ {{ "%.2f"|format(total_overdue) }}</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contas a Pagar -->
+        <div class="col-xl-6 col-lg-6">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Contas a Pagar</h6>
+                </div>
+                <div class="card-body">
+                    <div class="progress mb-4">
+                        <div class="progress-bar bg-success" role="progressbar" style="width: {{ (paid/total_payables*100) if total_payables > 0 else 0 }}%"></div>
+                    </div>
+                    <p>Total: R$ {{ "%.2f"|format(total_payables) }}</p>
+                    <p>Pago: R$ {{ "%.2f"|format(paid) }}</p>
+                    <p>Pendente: R$ {{ "%.2f"|format(pending_payables) }}</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Chart.js -->
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<!-- Gráficos -->
+<script>
+// Gráfico de Vendas
+var ctx = document.getElementById('salesChart').getContext('2d');
+var salesChart = new Chart(ctx, {
+    type: 'line',
+    data: {
+        labels: {{ last_12_months|tojson }},
+        datasets: [{
+            label: 'Vendas',
+            data: {{ sales_by_month|tojson }},
+            backgroundColor: 'rgba(78, 115, 223, 0.05)',
+            borderColor: 'rgba(78, 115, 223, 1)',
+            pointRadius: 3,
+            pointBackgroundColor: 'rgba(78, 115, 223, 1)',
+            pointBorderColor: 'rgba(78, 115, 223, 1)',
+            pointHoverRadius: 5,
+            pointHoverBackgroundColor: 'rgba(78, 115, 223, 1)',
+            pointHoverBorderColor: 'rgba(78, 115, 223, 1)',
+            pointHitRadius: 10,
+            pointBorderWidth: 2,
+            fill: true
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true,
+                ticks: {
+                    callback: function(value) {
+                        return 'R$ ' + value.toFixed(2);
+                    }
+                }
+            }
+        },
+        plugins: {
+            legend: {
+                display: false
+            }
+        }
+    }
+});
+
+// Gráfico de Produtos
+var ctx = document.getElementById('productsChart').getContext('2d');
+var productsChart = new Chart(ctx, {
+    type: 'doughnut',
+    data: {
+        labels: [{% for product in top_products %}'{{ product.name }}',{% endfor %}],
+        datasets: [{
+            data: [{% for product in top_products %}{{ product.total_quantity }},{% endfor %}],
+            backgroundColor: [
+                'rgba(78, 115, 223, 0.8)',
+                'rgba(54, 185, 204, 0.8)',
+                'rgba(246, 194, 62, 0.8)',
+                'rgba(28, 200, 138, 0.8)',
+                'rgba(231, 74, 59, 0.8)'
+            ]
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+</script>
+{% endblock %}

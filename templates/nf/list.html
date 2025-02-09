@@ -1,0 +1,226 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">Notas Fiscais</h1>
+        <button type="button" class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#modalInvoice">
+            <i class="bi bi-plus"></i> Nova Nota Fiscal
+        </button>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Número</th>
+                            <th>Série</th>
+                            <th>Fornecedor</th>
+                            <th>Data</th>
+                            <th>Total</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for invoice in invoices %}
+                        <tr>
+                            <td>{{ invoice.number }}</td>
+                            <td>{{ invoice.series }}</td>
+                            <td>{{ invoice.supplier.name }}</td>
+                            <td>{{ invoice.date.strftime('%d/%m/%Y') }}</td>
+                            <td>R$ {{ "%.2f"|format(invoice.total) }}</td>
+                            <td>
+                                {% if invoice.status == 'pendente' %}
+                                <span class="badge bg-warning">Pendente</span>
+                                {% elif invoice.status == 'aprovada' %}
+                                <span class="badge bg-success">Aprovada</span>
+                                {% elif invoice.status == 'cancelada' %}
+                                <span class="badge bg-danger">Cancelada</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <button type="button" class="btn btn-sm btn-outline-primary" onclick="editInvoice({{ invoice.id }})">
+                                    <i class="bi bi-pencil"></i>
+                                </button>
+                                <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteInvoice({{ invoice.id }})">
+                                    <i class="bi bi-trash"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Nova/Editar Nota Fiscal -->
+<div class="modal fade" id="modalInvoice" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Nova Nota Fiscal</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="formInvoice">
+                    <input type="hidden" id="invoiceId">
+                    <div class="mb-3">
+                        <label for="supplier" class="form-label">Fornecedor</label>
+                        <select class="form-select" id="supplier" required>
+                            <option value="">Selecione um fornecedor</option>
+                        </select>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-8">
+                            <label for="number" class="form-label">Número</label>
+                            <input type="text" class="form-control" id="number" required>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="series" class="form-label">Série</label>
+                            <input type="text" class="form-control" id="series">
+                        </div>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label for="date" class="form-label">Data</label>
+                            <input type="date" class="form-control" id="date" required>
+                        </div>
+                        <div class="col-md-6">
+                            <label for="total" class="form-label">Total</label>
+                            <input type="number" class="form-control" id="total" step="0.01" required>
+                        </div>
+                    </div>
+                    <div class="mb-3">
+                        <label for="tax" class="form-label">Impostos</label>
+                        <input type="number" class="form-control" id="tax" step="0.01" value="0">
+                    </div>
+                    <div class="mb-3">
+                        <label for="status" class="form-label">Status</label>
+                        <select class="form-select" id="status">
+                            <option value="pendente">Pendente</option>
+                            <option value="aprovada">Aprovada</option>
+                            <option value="cancelada">Cancelada</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="paymentMethod" class="form-label">Forma de Pagamento</label>
+                        <select class="form-select" id="paymentMethod">
+                            <option value="">Selecione</option>
+                            <option value="dinheiro">Dinheiro</option>
+                            <option value="cartao_credito">Cartão de Crédito</option>
+                            <option value="cartao_debito">Cartão de Débito</option>
+                            <option value="pix">PIX</option>
+                            <option value="boleto">Boleto</option>
+                            <option value="transferencia">Transferência</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="notes" class="form-label">Observações</label>
+                        <textarea class="form-control" id="notes" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="saveInvoice()">Salvar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Carregar fornecedores ao abrir o modal
+$('#modalInvoice').on('show.bs.modal', function () {
+    $.get('/api/suppliers')
+        .done(function(response) {
+            const select = $('#supplier');
+            select.empty();
+            select.append('<option value="">Selecione um fornecedor</option>');
+            response.data.forEach(function(supplier) {
+                select.append(`<option value="${supplier.id}">${supplier.name}</option>`);
+            });
+        })
+        .fail(function(error) {
+            console.error('Erro ao carregar fornecedores:', error);
+            alert('Erro ao carregar fornecedores. Por favor, tente novamente.');
+        });
+});
+
+function editInvoice(id) {
+    $.get(`/api/notas-fiscais/${id}`)
+        .done(function(response) {
+            const invoice = response.data;
+            $('#invoiceId').val(invoice.id);
+            $('#supplier').val(invoice.supplier_id);
+            $('#number').val(invoice.number);
+            $('#series').val(invoice.series);
+            $('#date').val(invoice.date.split('T')[0]);
+            $('#total').val(invoice.total);
+            $('#tax').val(invoice.tax);
+            $('#status').val(invoice.status);
+            $('#paymentMethod').val(invoice.payment_method);
+            $('#notes').val(invoice.notes);
+            $('#modalInvoice').modal('show');
+        })
+        .fail(function(error) {
+            console.error('Erro ao carregar nota fiscal:', error);
+            alert('Erro ao carregar nota fiscal. Por favor, tente novamente.');
+        });
+}
+
+function saveInvoice() {
+    const id = $('#invoiceId').val();
+    const data = {
+        supplier_id: $('#supplier').val(),
+        number: $('#number').val(),
+        series: $('#series').val(),
+        date: $('#date').val(),
+        total: parseFloat($('#total').val()),
+        tax: parseFloat($('#tax').val()),
+        status: $('#status').val(),
+        payment_method: $('#paymentMethod').val(),
+        notes: $('#notes').val()
+    };
+
+    const url = id ? `/api/notas-fiscais/${id}` : '/api/notas-fiscais';
+    const method = id ? 'PUT' : 'POST';
+
+    $.ajax({
+        url: url,
+        method: method,
+        contentType: 'application/json',
+        data: JSON.stringify(data)
+    })
+    .done(function() {
+        location.reload();
+    })
+    .fail(function(error) {
+        console.error('Erro ao salvar nota fiscal:', error);
+        alert('Erro ao salvar nota fiscal. Por favor, tente novamente.');
+    });
+}
+
+function deleteInvoice(id) {
+    if (confirm('Tem certeza que deseja excluir esta nota fiscal?')) {
+        $.ajax({
+            url: `/api/notas-fiscais/${id}`,
+            method: 'DELETE'
+        })
+        .done(function() {
+            location.reload();
+        })
+        .fail(function(error) {
+            console.error('Erro ao excluir nota fiscal:', error);
+            alert('Erro ao excluir nota fiscal. Por favor, tente novamente.');
+        });
+    }
+}
+</script>
+{% endblock %}

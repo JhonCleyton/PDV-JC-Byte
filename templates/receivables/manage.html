@@ -1,0 +1,320 @@
+{% extends 'base.html' %}
+
+{% block title %}Gerenciamento de Contas a Receber{% endblock %}
+
+{% block content %}
+<div class="container-fluid">
+    <h1 class="h3 mb-4">Gerenciamento de Contas a Receber</h1>
+
+    <!-- Filtros -->
+    <div class="card mb-4">
+        <div class="card-body">
+            <div class="row">
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="customer">Cliente</label>
+                        <select class="form-control" id="customer">
+                            <option value="">Todos</option>
+                            <!-- Preenchido via JavaScript -->
+                        </select>
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="start_date">Data Inicial</label>
+                        <input type="date" class="form-control" id="start_date">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="end_date">Data Final</label>
+                        <input type="date" class="form-control" id="end_date">
+                    </div>
+                </div>
+                <div class="col-md-3">
+                    <div class="form-group">
+                        <label for="status">Status</label>
+                        <select class="form-control" id="status">
+                            <option value="">Todos</option>
+                            <option value="pending">Pendente</option>
+                            <option value="partial">Parcial</option>
+                            <option value="paid">Pago</option>
+                            <option value="overdue">Vencido</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+            <div class="row mt-3">
+                <div class="col">
+                    <button class="btn btn-primary" onclick="filterReceivables()">Filtrar</button>
+                    <button class="btn btn-secondary" onclick="clearFilters()">Limpar</button>
+                    <button class="btn btn-success" onclick="showNewReceivableModal()">Nova Conta</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Lista de Contas -->
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Cliente</th>
+                            <th>Vencimento</th>
+                            <th>Valor Total</th>
+                            <th>Valor Pago</th>
+                            <th>Valor Restante</th>
+                            <th>Status</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody id="receivables-table">
+                        <!-- Preenchido via JavaScript -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Nova Conta -->
+<div class="modal fade" id="newReceivableModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Nova Conta a Receber</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="newReceivableForm">
+                    <div class="form-group">
+                        <label for="new_customer">Cliente</label>
+                        <select class="form-control" id="new_customer" required>
+                            <!-- Preenchido via JavaScript -->
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="amount">Valor</label>
+                        <input type="number" class="form-control" id="amount" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="due_date">Vencimento</label>
+                        <input type="date" class="form-control" id="due_date" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="description">Descrição</label>
+                        <textarea class="form-control" id="description"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="saveNewReceivable()">Salvar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Pagamento -->
+<div class="modal fade" id="paymentModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Registrar Pagamento</h5>
+                <button type="button" class="close" data-dismiss="modal">
+                    <span>&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <form id="paymentForm">
+                    <input type="hidden" id="payment_receivable_id">
+                    <div class="form-group">
+                        <label for="payment_amount">Valor</label>
+                        <input type="number" class="form-control" id="payment_amount" step="0.01" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="payment_method">Forma de Pagamento</label>
+                        <select class="form-control" id="payment_method" required>
+                            <option value="cash">Dinheiro</option>
+                            <option value="credit_card">Cartão de Crédito</option>
+                            <option value="debit_card">Cartão de Débito</option>
+                            <option value="pix">PIX</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="payment_notes">Observações</label>
+                        <textarea class="form-control" id="payment_notes"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="savePayment()">Salvar</button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let customers = [];
+
+function loadCustomers() {
+    fetch('/api/customers/list')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                customers = data.data;
+                const customerSelect = document.getElementById('customer');
+                const newCustomerSelect = document.getElementById('new_customer');
+                
+                customerSelect.innerHTML = '<option value="">Todos</option>';
+                newCustomerSelect.innerHTML = '';
+                
+                customers.forEach(customer => {
+                    customerSelect.innerHTML += `<option value="${customer.id}">${customer.name}</option>`;
+                    newCustomerSelect.innerHTML += `<option value="${customer.id}">${customer.name}</option>`;
+                });
+            }
+        })
+        .catch(error => console.error('Erro ao carregar clientes:', error));
+}
+
+function filterReceivables() {
+    const filters = {
+        customer_id: document.getElementById('customer').value,
+        start_date: document.getElementById('start_date').value,
+        end_date: document.getElementById('end_date').value,
+        status: document.getElementById('status').value
+    };
+
+    fetch('/api/receivables/list?' + new URLSearchParams(filters))
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const tbody = document.getElementById('receivables-table');
+                tbody.innerHTML = '';
+
+                data.data.forEach(receivable => {
+                    const row = document.createElement('tr');
+                    row.innerHTML = `
+                        <td>${receivable.id}</td>
+                        <td>${receivable.customer.name}</td>
+                        <td>${new Date(receivable.due_date).toLocaleDateString()}</td>
+                        <td>R$ ${receivable.amount.toFixed(2)}</td>
+                        <td>R$ ${receivable.paid_amount.toFixed(2)}</td>
+                        <td>R$ ${receivable.remaining_amount.toFixed(2)}</td>
+                        <td>${formatStatus(receivable.status)}</td>
+                        <td>
+                            ${receivable.status !== 'paid' ? `
+                                <button class="btn btn-sm btn-success" onclick="showPaymentModal(${receivable.id}, ${receivable.remaining_amount})">
+                                    <i class="fas fa-dollar-sign"></i>
+                                </button>
+                            ` : ''}
+                        </td>
+                    `;
+                    tbody.appendChild(row);
+                });
+            }
+        })
+        .catch(error => console.error('Erro ao carregar contas:', error));
+}
+
+function clearFilters() {
+    document.getElementById('customer').value = '';
+    document.getElementById('start_date').value = '';
+    document.getElementById('end_date').value = '';
+    document.getElementById('status').value = '';
+    filterReceivables();
+}
+
+function formatStatus(status) {
+    const statuses = {
+        'pending': 'Pendente',
+        'partial': 'Parcial',
+        'paid': 'Pago',
+        'overdue': 'Vencido'
+    };
+    return statuses[status] || status;
+}
+
+function showNewReceivableModal() {
+    $('#newReceivableModal').modal('show');
+}
+
+function saveNewReceivable() {
+    const data = {
+        customer_id: document.getElementById('new_customer').value,
+        amount: parseFloat(document.getElementById('amount').value),
+        due_date: document.getElementById('due_date').value,
+        description: document.getElementById('description').value
+    };
+
+    fetch('/api/receivables', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            $('#newReceivableModal').modal('hide');
+            document.getElementById('newReceivableForm').reset();
+            filterReceivables();
+        } else {
+            alert(data.error);
+        }
+    })
+    .catch(error => console.error('Erro ao criar conta:', error));
+}
+
+function showPaymentModal(receivableId, remainingAmount) {
+    document.getElementById('payment_receivable_id').value = receivableId;
+    document.getElementById('payment_amount').value = remainingAmount.toFixed(2);
+    document.getElementById('payment_amount').max = remainingAmount;
+    $('#paymentModal').modal('show');
+}
+
+function savePayment() {
+    const receivableId = document.getElementById('payment_receivable_id').value;
+    const data = {
+        amount: parseFloat(document.getElementById('payment_amount').value),
+        payment_method: document.getElementById('payment_method').value,
+        notes: document.getElementById('payment_notes').value
+    };
+
+    fetch(`/api/receivables/${receivableId}/payment`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            $('#paymentModal').modal('hide');
+            document.getElementById('paymentForm').reset();
+            filterReceivables();
+        } else {
+            alert(data.error);
+        }
+    })
+    .catch(error => console.error('Erro ao registrar pagamento:', error));
+}
+
+// Inicialização
+document.addEventListener('DOMContentLoaded', () => {
+    loadCustomers();
+    filterReceivables();
+});
+</script>
+{% endblock %}

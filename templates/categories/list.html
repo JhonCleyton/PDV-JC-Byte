@@ -1,0 +1,208 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3">Categorias</h1>
+        <button type="button" class="btn btn-primary" onclick="openCreateModal()">
+            <i class="bi bi-plus"></i> Nova Categoria
+        </button>
+    </div>
+
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Nome</th>
+                            <th>Descrição</th>
+                            <th>Produtos</th>
+                            <th>Ações</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for category in categories %}
+                        <tr>
+                            <td>{{ category.name }}</td>
+                            <td>{{ category.description }}</td>
+                            <td>{{ category.products|length }}</td>
+                            <td>
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-sm btn-outline-secondary" onclick="viewCategory({{ category.id }})">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="editCategory({{ category.id }})">
+                                        <i class="bi bi-pencil"></i>
+                                    </button>
+                                    <button type="button" class="btn btn-sm btn-outline-danger" onclick="deleteCategory({{ category.id }})">
+                                        <i class="bi bi-trash"></i>
+                                    </button>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Criação/Edição -->
+<div class="modal fade" id="categoryModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Nova Categoria</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <form id="categoryForm">
+                    <input type="hidden" id="categoryId">
+                    <div class="mb-3">
+                        <label for="name" class="form-label">Nome</label>
+                        <input type="text" class="form-control" id="name" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="description" class="form-label">Descrição</label>
+                        <textarea class="form-control" id="description" rows="3"></textarea>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-primary" onclick="saveCategory()">Salvar</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal de Visualização -->
+<div class="modal fade" id="viewCategoryModal" tabindex="-1">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Detalhes da Categoria</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body">
+                <div class="mb-3">
+                    <h6>Informações Gerais</h6>
+                    <p class="mb-1">Nome: <span id="viewName"></span></p>
+                    <p class="mb-1">Descrição: <span id="viewDescription"></span></p>
+                    <p class="mb-1">Total de Produtos: <span id="viewProducts"></span></p>
+                    <p class="mb-1">Criada em: <span id="viewCreatedAt"></span></p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+let categoryModal;
+let viewCategoryModal;
+
+document.addEventListener('DOMContentLoaded', function() {
+    categoryModal = new bootstrap.Modal(document.getElementById('categoryModal'));
+    viewCategoryModal = new bootstrap.Modal(document.getElementById('viewCategoryModal'));
+});
+
+function openCreateModal() {
+    document.getElementById('categoryForm').reset();
+    document.getElementById('categoryId').value = '';
+    document.querySelector('#categoryModal .modal-title').textContent = 'Nova Categoria';
+    categoryModal.show();
+}
+
+function viewCategory(id) {
+    fetch(`/api/categories/${id}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const category = data.data;
+                document.getElementById('viewName').textContent = category.name;
+                document.getElementById('viewDescription').textContent = category.description || '-';
+                document.getElementById('viewProducts').textContent = category.products ? category.products.length : 0;
+                document.getElementById('viewCreatedAt').textContent = new Date(category.created_at).toLocaleString();
+                viewCategoryModal.show();
+            } else {
+                alert('Erro ao carregar categoria: ' + data.error);
+            }
+        })
+        .catch(error => {
+            alert('Erro ao carregar categoria: ' + error);
+        });
+}
+
+function editCategory(id) {
+    fetch(`/api/categories/${id}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const category = data.data;
+                document.getElementById('categoryId').value = category.id;
+                document.getElementById('name').value = category.name;
+                document.getElementById('description').value = category.description || '';
+                
+                document.querySelector('#categoryModal .modal-title').textContent = 'Editar Categoria';
+                categoryModal.show();
+            } else {
+                alert('Erro ao carregar categoria: ' + data.error);
+            }
+        })
+        .catch(error => {
+            alert('Erro ao carregar categoria: ' + error);
+        });
+}
+
+function saveCategory() {
+    const id = document.getElementById('categoryId').value;
+    const data = {
+        name: document.getElementById('name').value,
+        description: document.getElementById('description').value
+    };
+    
+    const method = id ? 'PUT' : 'POST';
+    const url = id ? `/api/categories/${id}` : '/api/categories';
+    
+    fetch(url, {
+        method: method,
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(data)
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            alert(id ? 'Categoria atualizada com sucesso!' : 'Categoria criada com sucesso!');
+            location.reload();
+        } else {
+            alert('Erro ao salvar categoria: ' + data.error);
+        }
+    })
+    .catch(error => {
+        alert('Erro ao salvar categoria: ' + error);
+    });
+}
+
+function deleteCategory(id) {
+    if (confirm('Tem certeza que deseja excluir esta categoria?')) {
+        fetch(`/api/categories/${id}`, { method: 'DELETE' })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Categoria excluída com sucesso!');
+                    location.reload();
+                } else {
+                    alert('Erro ao excluir categoria: ' + data.error);
+                }
+            })
+            .catch(error => {
+                alert('Erro ao excluir categoria: ' + error);
+            });
+    }
+}
+</script>
+{% endblock %}

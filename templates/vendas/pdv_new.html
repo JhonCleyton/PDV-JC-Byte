@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+
+{% block content %}
+<!-- ... (resto do código HTML) ... -->
+
+<script>
+// ... (código anterior) ...
+
+function buscarCliente() {
+    const matricula = document.getElementById('matriculaCliente').value.trim();
+    
+    if (!matricula) {
+        alert('Por favor, digite a matrícula do cliente');
+        return;
+    }
+    
+    console.log('=== Buscando cliente ===');
+    console.log('Registro original:', matricula);
+    
+    // Remove caracteres não numéricos
+    const matriculaLimpa = matricula.replace(/\D/g, '');
+    console.log('Registro limpo:', matriculaLimpa);
+    
+    console.log('\nTentando buscar por matrícula...');
+    
+    fetch(`/api/clientes/buscar/${matriculaLimpa}`)
+        .then(response => response.json())
+        .then(data => {
+            if (data.success && data.cliente) {
+                clienteAtual = data.cliente;
+                console.log('Cliente encontrado por matrícula:', clienteAtual.name);
+                console.log('\nDados do cliente:');
+                console.log('- ID:', clienteAtual.id);
+                console.log('- Nome:', clienteAtual.name);
+                console.log('- CPF:', clienteAtual.cpf);
+                console.log('- Matrícula:', clienteAtual.registration);
+                console.log('- Dict:', clienteAtual);
+                
+                document.getElementById('nomeCliente').textContent = clienteAtual.name;
+                document.getElementById('limiteDisponivel').textContent = 
+                    (clienteAtual.credit_limit - clienteAtual.current_debt).toFixed(2);
+                document.getElementById('infoCliente').classList.remove('d-none');
+            } else {
+                alert('Cliente não encontrado');
+                document.getElementById('infoCliente').classList.add('d-none');
+                clienteAtual = null;
+            }
+        })
+        .catch(error => {
+            console.error('Erro ao buscar cliente:', error);
+            alert('Erro ao buscar cliente');
+            document.getElementById('infoCliente').classList.add('d-none');
+            clienteAtual = null;
+        });
+}
+
+// ... (resto do código) ...
+</script>
+{% endblock %}
